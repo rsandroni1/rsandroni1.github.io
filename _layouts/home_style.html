@@ -1,9 +1,18 @@
 <!doctype html>
 <html lang="en">
-
-  {% include head.html %}
-  {% include header.html %}
-  {% include script.html %}
+  <head>
+    {% include head.html %}
+    {% include header.html %}
+    {% include script.html %}
+    <style>
+      .carousel-inner .item img {
+        width: 100%;
+        height: auto;
+        max-height: 400px; /* Adjust this to your desired height */
+        object-fit: cover; /* Ensures the image fills the container */
+      }
+    </style>
+  </head>
 
   <body>
     <!-- Begin #carousel-section -->
@@ -23,7 +32,7 @@
                     <div class="carousel-inner" role="listbox">
                         <!-- Begin Slide 1 -->
                         <div class="item active">
-                            <img src="../assets/img/slider/GrapeTotes1.jpg" height="400" alt="Image of first carousel">
+                            <img src="../assets/img/slider/PinotNoir1.jpg" alt="Image of first carousel">
                             <div class="carousel-caption">
                                 <h3 class="carousel-title hidden-xs">ONLY THE BEST QUALITY</h3>
                                 <p class="carousel-body">CRAFTING PREMIUM WINES</p>
@@ -33,7 +42,7 @@
 
                         <!-- Begin Slide 2 -->
                         <div class="item">
-                            <img src="../assets/img/slider/Vidal2.jpg" height="400" alt="Image of second carousel">
+                            <img src="../assets/img/slider/VidalBlanc1.jpg" alt="Image of second carousel">
                             <div class="carousel-caption">
                                 <h3 class="carousel-title hidden-xs">ALWAYS CHASING THE NEXT TASTE</h3>
                                 <p class="carousel-body">WE DONT HESITATE TO TAKE RISKS</p>
@@ -43,7 +52,7 @@
 
                         <!-- Begin Slide 3 -->
                         <div class="item">
-                            <img src="../assets/img/slider/VinyardLake.jpg" height="400" alt="Image of third carousel">
+                            <img src="../assets/img/slider/VinyardLake1.jpg" alt="Image of third carousel">
                             <div class="carousel-caption">
                                 <h3 class="carousel-title hidden-xs">IN THE HEART OF THE FINGER LAKES</h3>
                                 <p class="carousel-body">BRINGING WORLD-CLASS TECHNIQUES TO THIS UNIQUE REGION</p>
