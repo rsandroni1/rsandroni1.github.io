@@ -32,7 +32,6 @@ google_map: https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d3618.727010735
 facebook_link: http://www.facebook.com
 twitter_link: http://www.twitter.com
 linkedin_link: http://www.linkedin.com
-instagram_link: https://www.instagram.com
 
 # Build settings
 markdown: kramdown
