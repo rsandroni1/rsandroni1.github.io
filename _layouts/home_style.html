@@ -11,31 +11,24 @@
         max-height: 400px; /* Adjust this to your desired height */
         object-fit: cover; /* Ensures the image fills the container */
       }
+
+      /* Adjust carousel text for smaller screens */
+      @media (max-width: 767px) {
+        .carousel-caption {
+          bottom: 20px; /* Adjust positioning */
+          padding: 10px;
+        }
+
+        .carousel-title {
+          font-size: 18px; /* Smaller font size for titles */
+          line-height: 1.2;
+        }
+
+        .carousel-body {
+          font-size: 14px; /* Smaller font size for body text */
+        }
+      }
     </style>
-    	.carousel-inner .item img {
-      	width: 100%;
-      	height: auto;
-      	max-height: 400px; /* Adjust this to your desired height */
-      	object-fit: cover; /* Ensures the image fills the container */
-    	}
-
-    	/* Adjust carousel text for smaller screens */
-    	@media (max-width: 767px) {
-      	.carousel-caption {
-        	bottom: 20px; /* Adjust positioning */
-        	padding: 10px;
-      	}
-      
-      	.carousel-title {
-        	font-size: 18px; /* Smaller font size for titles */
-        	line-height: 1.2;
-      	}
-
-      	.carousel-body {
-        	font-size: 14px; /* Smaller font size for body text */
-      	}
-    	}
-  	</style>
   </head>
 
   <body>
@@ -69,7 +62,7 @@
                             <img src="../assets/img/slider/VidalBlanc1.jpg" alt="Image of second carousel">
                             <div class="carousel-caption">
                                 <h3 class="carousel-title">ALWAYS CHASING THE NEXT TASTE</h3>
-                                <p class="carousel-body">WE DONT HESITATE TO TAKE RISKS</p>
+                                <p class="carousel-body">WE DON'T HESITATE TO TAKE RISKS</p>
                             </div>
                         </div>
                         <!-- End Slide 2 -->
@@ -78,7 +71,7 @@
                         <div class="item">
                             <img src="../assets/img/slider/VinyardLake1.jpg" alt="Image of third carousel">
                             <div class="carousel-caption">
-                                <h3 class="carousel-title=">IN THE HEART OF THE FINGER LAKES</h3>
+                                <h3 class="carousel-title">IN THE HEART OF THE FINGER LAKES</h3>
                                 <p class="carousel-body">BRINGING WORLD-CLASS TECHNIQUES TO THIS UNIQUE REGION</p>
                             </div>
                         </div>
@@ -105,7 +98,7 @@
             <div class="row">
                 <div class="services-header">
                     <h3 class="services-header-title">Our Mission</h3>
-                    <p class="services-header-body"><em> Things we provide in Office </em>  </p><hr>
+                    <p class="services-header-body"><em> Things we provide in Office </em></p><hr>
                 </div>
             </div>
       
@@ -138,7 +131,7 @@
                     </div>        
                 </div>
             </div>
-            <!-- End Serivces Row 1 -->
+            <!-- End Services Row 1 -->
     
         </div>      
     </section>
@@ -148,3 +141,5 @@
 
   {% include footer.html %}
 </html>
+
+
