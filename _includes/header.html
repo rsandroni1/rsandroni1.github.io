@@ -10,29 +10,30 @@
       <span class="icon-bar"></span>
     </button>
 
-    <a class="navbar-brand wow fadeInDownBig" href="index.html"><img class="office-logo" src="../assets/ico/CCLogo1.png" alt=""></a>      
+    <a class="navbar-brand wow fadeInDownBig" href="index.html">
+      <img class="office-logo" src="/assets/ico/CCLogo1.png" alt="Chaos Cellars Logo">
+    </a>      
   </div>
 
-  <div id="navbar-spy" class="collapse navbar-collapse navbar-responsive-collapse">
+  <div class="collapse navbar-collapse navbar-responsive-collapse" id="navbar-spy">
     <ul class="nav navbar-nav pull-right">
-      <li class="active">
+      <li class="{% if page.url == '/' %}active{% endif %}">
         <a href="/">Home</a>
       </li>
-      <li>
+      <li class="{% if page.url == '/about.html' %}active{% endif %}">
         <a href="/about.html">About</a>
       </li>
-      <li>
+      <li class="{% if page.url == '/blog.html' %}active{% endif %}">
         <a href="/blog.html">Blog</a>
       </li>
-      <li>
+      <li class="{% if page.url == '/team.html' %}active{% endif %}">
         <a href="/team.html">Team</a>
       </li>
-      <li>
+      <li class="{% if page.url == '/contact.html' %}active{% endif %}">
         <a href="/contact.html"><span>Contact</span></a>
       </li>
     </ul>         
   </div>
   </div>
 </nav>
-
 <!-- End Header -->
