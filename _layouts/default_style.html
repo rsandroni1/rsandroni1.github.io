@@ -1,13 +1,22 @@
 <!doctype html>
 <html lang="en">
 
-  {% include head.html %}
-  {% include header.html %}
-  {% include script.html %}
+  {% include head.html %} <!-- Include your head section (CSS and meta tags) -->
+  {% include header.html %} <!-- Include your navigation/header -->
 
   <body>
-    {{ content }}
+    {{ content }} <!-- Dynamic content from pages will be inserted here -->
+
+    {% include footer.html %} <!-- Include footer content -->
+
+    <!-- jQuery (Required for Bootstrap) -->
+    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+    <!-- Optional: Custom JS -->
+    <script src="/assets/js/custom.js"></script>
   </body>
 
-  {% include footer.html %}
 </html>
