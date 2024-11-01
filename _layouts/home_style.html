@@ -126,8 +126,17 @@
 </section>
 <!-- End #image-section -->
 <!-- Button to open the form -->
-<button id="emailListButton" onclick="openFormPopup()"><h1>Join Our Email List</h1></button>
-
+<div>
+  body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Full viewport height */
+  margin: 0;
+}
+  <button id="emailListButton" onclick="openFormPopup()"><h1>Join Our Email List</h1></button>
+  </div>
+  
 <!-- Popup Form -->
 <div id="formPopup" class="popup">
   <div class="popup-content">
