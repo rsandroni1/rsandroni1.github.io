@@ -55,37 +55,6 @@
     font-weight: 600; /* Slightly bold */
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6); /* Add text shadow */
 }
-    /* Popup overlay for email collection form */
-.popup {
-  display: none; /* Hidden by default */
-  position: fixed;
-  z-index: 1; /* Sit on top */
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Black background with transparency */
-}
-
-/* Popup content box */
-.popup-content {
-  position: relative;
-  margin: 10% auto;
-  padding: 20px;
-  width: 660px;
-  background-color: #fff;
-  border-radius: 5px;
-  box-shadow: 0px 0px 10px 0px #000;
-}
-
-/* Close button */
-.close {
-  position: absolute;
-  top: 10px;
-  right: 20px;
-  font-size: 24px;
-  cursor: pointer;
-}
     </style>
   </head>
 
@@ -126,24 +95,14 @@
 </section>
 <!-- End #image-section -->
 <!-- Button to open the form -->
-<div>
-  body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh; /* Full viewport height */
-  margin: 0;
-}
-  <button id="emailListButton" onclick="openFormPopup()"><h1>Join Our Email List</h1></button>
-  </div>
-  
-<!-- Popup Form -->
-<div id="formPopup" class="popup">
-  <div class="popup-content">
-    <span class="close" onclick="closeFormPopup()">&times;</span>
-    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdzvSCMp3xjkYiDvndQpzbwz_S7tnDqAl4eIO2AZqMoNrvyCQ/viewform?embedded=true" width="640" height="395" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
-  </div>
-</div>
+<h3>Join Our Mailing List</h3>
+  <input placeholder="Email">
+    <br>
+      <button>Submit</button>
+    <br>
+      <p>We'll keep you up to date with what's happening at the winery. 
+        </p>
+
 <!-- Begin #services-section -->
 <section id="services" class="services-section section-global-wrapper">
     <div class="container">
@@ -199,16 +158,5 @@
 
   {% include footer.html %}
 </html>
-
-
-<script>
-function openFormPopup() {
-  document.getElementById("formPopup").style.display = "block";
-}
-
-function closeFormPopup() {
-  document.getElementById("formPopup").style.display = "none";
-}
-</script>
 
 
