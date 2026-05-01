@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PIN Vault">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>PIN Vault</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ── PIN Screen ─────────────────────────────────────────────── -->
+  <div class="screen" id="pin-screen">
+    <div class="pin-logo">🔐</div>
+    <div>
+      <div class="pin-title" id="pin-title">Enter PIN</div>
+      <div class="pin-subtitle" id="pin-subtitle">Unlock your vault</div>
+    </div>
+
+    <div class="pin-dots">
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+    </div>
+
+    <div class="pin-error-msg" id="pin-error"></div>
+
+    <div class="keypad">
+      <button class="key" data-digit="1">1</button>
+      <button class="key" data-digit="2">2</button>
+      <button class="key" data-digit="3">3</button>
+      <button class="key" data-digit="4">4</button>
+      <button class="key" data-digit="5">5</button>
+      <button class="key" data-digit="6">6</button>
+      <button class="key" data-digit="7">7</button>
+      <button class="key" data-digit="8">8</button>
+      <button class="key" data-digit="9">9</button>
+      <button class="key empty"></button>
+      <button class="key" data-digit="0">0</button>
+      <button class="key delete" id="key-delete">⌫</button>
+    </div>
+  </div>
+
+  <!-- ── Main Screen ────────────────────────────────────────────── -->
+  <div class="screen hidden" id="main-screen">
+    <div class="topbar">
+      <h1>🔐 Vault</h1>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="settings-btn" title="Settings">⚙️</button>
+        <button class="icon-btn" id="lock-btn" title="Lock">🔒</button>
+      </div>
+    </div>
+
+    <div class="cat-tabs" id="cat-tabs"></div>
+
+    <div class="items-list" id="items-list"></div>
+
+    <button class="fab" id="fab-add" title="Add item">+</button>
+  </div>
+
+  <!-- ── Add / Edit Modal ───────────────────────────────────────── -->
+  <div class="modal-overlay" id="item-overlay">
+    <div class="modal" id="item-modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="modal-title-text">New Item</div>
+
+      <div class="form-group">
+        <label class="form-label" for="item-title-input">Title</label>
+        <input class="form-input" id="item-title-input" type="text" placeholder="e.g. Gmail, Mac login...">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="item-category">Category</label>
+        <select class="form-select" id="item-category">
+          <option value="Password">🔑 Password</option>
+          <option value="Key Combo">⌨️ Key Combo</option>
+          <option value="Note">📝 Note</option>
+          <option value="WiFi">📶 WiFi</option>
+          <option value="Other">📦 Other</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="username-group">
+        <label class="form-label" for="item-username">Username / Account</label>
+        <input class="form-input" id="item-username" type="text" autocomplete="off" placeholder="Optional">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" id="secret-label">Secret</label>
+        <div class="secret-wrapper">
+          <input class="form-input" id="secret-input" type="password" autocomplete="off" placeholder="Enter value...">
+          <button class="reveal-btn" id="reveal-btn" type="button">
+            <span id="reveal-icon">👁</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="item-notes">Notes <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+        <textarea class="form-textarea" id="item-notes" placeholder="Any extra info..."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="cancel-item-btn">Cancel</button>
+        <button class="btn btn-primary" id="save-item-btn">Save</button>
+        <button class="btn btn-danger" id="delete-btn" style="display:none">🗑</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Detail Modal ───────────────────────────────────────────── -->
+  <div class="modal-overlay" id="detail-overlay">
+    <div class="modal" id="detail-modal">
+      <div class="modal-handle"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div class="modal-title" id="detail-title" style="margin:0"></div>
+        <button class="icon-btn" id="detail-edit-btn">✏️</button>
+      </div>
+      <div id="detail-body"></div>
+    </div>
+  </div>
+
+  <!-- ── Settings Modal ─────────────────────────────────────────── -->
+  <div class="modal-overlay" id="settings-overlay">
+    <div class="modal" id="settings-modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Settings</div>
+
+      <div class="settings-row" id="change-pin-btn">
+        <span class="settings-row-label">🔄 Change PIN</span>
+        <span class="settings-row-meta">Reset &amp; re-enter</span>
+      </div>
+      <div class="settings-row" id="export-btn">
+        <span class="settings-row-label">📤 Export Data</span>
+        <span class="settings-row-meta">Save as JSON (unencrypted)</span>
+      </div>
+      <div class="settings-row" id="close-settings-btn" style="justify-content:center">
+        <span class="settings-row-label" style="color:var(--muted)">Close</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

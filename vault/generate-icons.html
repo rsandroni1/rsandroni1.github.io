@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<body>
+<canvas id="c192" width="192" height="192"></canvas>
+<canvas id="c512" width="512" height="512"></canvas>
+<script>
+function drawIcon(canvas) {
+  const ctx = canvas.getContext('2d');
+  const s = canvas.width;
+  const r = s * 0.22;
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, s, s);
+  grad.addColorStop(0, '#1a1a2e');
+  grad.addColorStop(1, '#0f3460');
+  ctx.fillStyle = grad;
+  ctx.roundRect(0, 0, s, s, r);
+  ctx.fill();
+  // Lock icon
+  ctx.fillStyle = '#e94560';
+  const cx = s/2, cy = s/2;
+  const bw = s*0.36, bh = s*0.28, bx = cx - bw/2, by = cy - bh*0.1;
+  ctx.beginPath();
+  ctx.roundRect(bx, by, bw, bh, s*0.06);
+  ctx.fill();
+  ctx.strokeStyle = '#e94560';
+  ctx.lineWidth = s*0.07;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(cx, cy - bh*0.2, bw*0.28, Math.PI, 0);
+  ctx.stroke();
+  // Keyhole
+  ctx.fillStyle = '#1a1a2e';
+  ctx.beginPath();
+  ctx.arc(cx, by + bh*0.38, s*0.05, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillRect(cx - s*0.025, by + bh*0.38, s*0.05, s*0.09);
+}
+
+['c192','c512'].forEach(id => {
+  const c = document.getElementById(id);
+  drawIcon(c);
+  const a = document.createElement('a');
+  a.download = `icon-${c.width}.png`;
+  a.href = c.toDataURL('image/png');
+  a.textContent = `Download icon-${c.width}.png`;
+  a.style.display = 'block';
+  document.body.appendChild(a);
+});
+</script>
+</body>
+</html>
