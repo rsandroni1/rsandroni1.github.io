@@ -1,3 +1,60 @@
----
-layout: home_style
----
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="My Apps">
+  <meta name="theme-color" content="#0d0d14">
+  <meta name="description" content="Personal app launcher">
+  <title>My Apps</title>
+  <link rel="manifest" href="store-manifest.json">
+  <link rel="apple-touch-icon" href="vault/icon-192.png">
+  <link rel="stylesheet" href="store.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-logo">📱</div>
+      <div>
+        <h1 id="store-title">My Apps</h1>
+        <p id="app-count">Loading…</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Install this page as a PWA -->
+    <div class="install-banner" id="install-banner">
+      <div class="install-icon">📲</div>
+      <div class="install-text">
+        <h3>Add to Home Screen</h3>
+        <p>Install this launcher so you can quickly access all your apps from one icon.</p>
+        <div class="install-steps">
+          <div class="install-step"><span class="step-num">1</span>Tap the Share button in Safari</div>
+          <div class="install-step"><span class="step-num">2</span>Tap "Add to Home Screen"</div>
+          <div class="install-step"><span class="step-num">3</span>Tap Add — done!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Apps -->
+    <div class="section-title">Apps</div>
+    <div id="apps-container"></div>
+
+    <!-- What's New -->
+    <div class="section-title">What's New</div>
+    <div id="whats-new-container"></div>
+
+  </main>
+
+  <footer>
+    <p>Pull down in Safari to check for updates.</p>
+  </footer>
+
+  <script src="store.js"></script>
+</body>
+</html>

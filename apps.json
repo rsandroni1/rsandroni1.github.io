@@ -1,0 +1,29 @@
+{
+  "storeTitle": "My Apps",
+  "apps": [
+    {
+      "id": "vault",
+      "name": "PIN Vault",
+      "description": "Secure PIN-protected storage for passwords, key combos, WiFi credentials, and notes. All data is encrypted with your PIN.",
+      "icon": "/vault/icon-192.png",
+      "url": "/vault/",
+      "category": "Utilities",
+      "version": "1.0",
+      "releaseDate": "2026-05-01",
+      "color": "#e94560",
+      "changelog": [
+        {
+          "version": "1.0",
+          "date": "2026-05-01",
+          "notes": [
+            "Initial release",
+            "AES-256-GCM encrypted storage — PIN never stored",
+            "5 categories: Password, Key Combo, WiFi, Note, Other",
+            "Copy to clipboard, reveal/hide secrets",
+            "Export backup as JSON"
+          ]
+        }
+      ]
+    }
+  ]
+}
