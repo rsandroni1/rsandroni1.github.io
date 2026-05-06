@@ -286,6 +286,7 @@
     .b-add      { background: #dff0e4; color: #1d5a2a; }
     .b-remove   { background: #fde8e8; color: #a02020; }
     .b-adjust   { background: #fdf0dc; color: #8a5200; }
+    .b-scrap    { background: #f5e8e8; color: #7a1a1a; }
 
     /* ── WINE DOT ────────────────────────────────────── */
     .dot {
@@ -824,8 +825,9 @@ function renderUnfinBtl() {
       <td>${lName(i.locationId)}</td>
       <td><strong>${bottleStr(i.bottles)}</strong><br><span style="font-size:11px;color:var(--muted)">${i.bottles||0} btl</span></td>
       <td style="font-size:12px;color:var(--muted)">${i.notes||''}</td>
-      <td><div style="display:flex;gap:4px">
+      <td><div style="display:flex;gap:4px;flex-wrap:wrap">
         <button class="btn btn-xs btn-secondary" onclick="openAddUnfinished('${i.id}')">Edit</button>
+        <button class="btn btn-xs btn-accent"    onclick="openScrapUnfinBtl('${i.id}')">Scrap</button>
         <button class="btn btn-xs btn-danger"    onclick="delUnfin('${i.id}')">Del</button>
       </div></td>
     </tr>`).join('')}</tbody>
@@ -857,8 +859,9 @@ function renderFermenting() {
         <td>${b.isFull?'Full':'Partial'}</td>
         <td><strong>${parseFloat(b.gallons||0).toFixed(1)}</strong></td>
         <td style="font-size:12px;color:var(--muted)">${b.notes||''}</td>
-        <td><div style="display:flex;gap:4px">
+        <td><div style="display:flex;gap:4px;flex-wrap:wrap">
           <button class="btn btn-xs btn-secondary" onclick="openAddFermenting('${b.id}')">Edit</button>
+          <button class="btn btn-xs btn-accent"    onclick="openDumpFermenting('${b.id}')">Dump</button>
           <button class="btn btn-xs btn-danger"    onclick="delFermenting('${b.id}')">Del</button>
         </div></td>
       </tr>`;
@@ -899,8 +902,9 @@ function renderSupplies() {
         <td>${(s.bottles||0)%12}</td>
         <td>${s.bottles||0}</td>
         <td style="font-size:12px;color:var(--muted)">${s.notes||''}</td>
-        <td><div style="display:flex;gap:4px">
+        <td><div style="display:flex;gap:4px;flex-wrap:wrap">
           <button class="btn btn-xs btn-secondary" onclick="openAddSupply('${s.id}')">Edit</button>
+          <button class="btn btn-xs btn-accent"    onclick="openScrapSupply('${s.id}')">Scrap</button>
           <button class="btn btn-xs btn-danger"    onclick="delSupply('${s.id}')">Del</button>
         </div></td>
       </tr>`).join('')}</tbody>
@@ -913,8 +917,9 @@ function renderSupplies() {
         <td>${lName(s.locationId)}</td>
         <td><strong>${s.units||0}</strong></td>
         <td style="font-size:12px;color:var(--muted)">${s.notes||''}</td>
-        <td><div style="display:flex;gap:4px">
+        <td><div style="display:flex;gap:4px;flex-wrap:wrap">
           <button class="btn btn-xs btn-secondary" onclick="openAddSupply('${s.id}')">Edit</button>
+          <button class="btn btn-xs btn-accent"    onclick="openScrapSupply('${s.id}')">Scrap</button>
           <button class="btn btn-xs btn-danger"    onclick="delSupply('${s.id}')">Del</button>
         </div></td>
       </tr>`).join('')}</tbody>
@@ -931,8 +936,8 @@ function delSupply(id) {
 // ════════════════════════════════════════════════════════
 // TRANSACTIONS
 // ════════════════════════════════════════════════════════
-const TX_LABEL  = {add:'Add',removeFromBond:'Remove from Bond',sale:'Sale',sample:'Marketing Sample',library:'Library',adjustment:'Adjustment'};
-const TX_BADGE  = {add:'b-add',removeFromBond:'b-remove',sale:'b-sale',sample:'b-sample',library:'b-library',adjustment:'b-adjust'};
+const TX_LABEL  = {add:'Add',removeFromBond:'Remove from Bond',sale:'Sale',sample:'Marketing Sample',library:'Library',adjustment:'Adjustment',scrap:'Scrap / Write-off',dump:'Dump (Fermenting)',supplyScrap:'Supply Scrap'};
+const TX_BADGE  = {add:'b-add',removeFromBond:'b-remove',sale:'b-sale',sample:'b-sample',library:'b-library',adjustment:'b-adjust',scrap:'b-scrap',dump:'b-scrap',supplyScrap:'b-scrap'};
 const TX_CHAN   = {customer:'Customer',store:'Wine Store',restaurant:'Restaurant'};
 
 function renderTransactions() {
@@ -1203,6 +1208,7 @@ function openTransaction(evt, goodId) {
         <option value="sale">Sale</option>
         <option value="sample">Marketing Sample</option>
         <option value="library">Library</option>
+        <option value="scrap">Scrap / Write-off (damaged, spoiled, lost)</option>
         <option value="adjustment">Inventory Adjustment</option>
       </select>
     </div>
@@ -1284,7 +1290,7 @@ function openTransaction(evt, goodId) {
 function txTypeChange() {
   const t = el('m-tx-t')?.value;
   const isAdd = t==='add' || t==='adjustment';
-  const isSrc = ['sale','sample','library','removeFromBond'].includes(t);
+  const isSrc = ['sale','sample','library','removeFromBond','scrap'].includes(t);
   el('m-dest-row').style.display = isAdd ? '' : 'none';
   el('m-src-row').style.display  = isSrc ? '' : 'none';
   el('m-chan-row').style.display  = t==='sale' ? '' : 'none';
@@ -1305,6 +1311,118 @@ function applyFG(wineId, locationId, bond, delta) {
     rec.outBond = Math.max(0, before + delta);
     return rec.outBond - before;
   }
+}
+
+// ════════════════════════════════════════════════════════
+// SCRAP / DUMP MODALS
+// ════════════════════════════════════════════════════════
+function openScrapUnfinBtl(itemId) {
+  const item = S.unfinBtl.find(x=>x.id===itemId); if (!item) return;
+  const c = Math.floor((item.bottles||0)/12), b = (item.bottles||0)%12;
+  openModal('Scrap Unfinished Wine', `
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">
+      <strong>${wName(item.wineId)}</strong> · On hand: ${bottleStr(item.bottles||0)}
+    </p>
+    <div class="form-group"><label>Date</label>
+      <input id="m-sc-d" type="date" value="${today()}"></div>
+    ${calcHtml('m-sc-c','m-sc-b','m-sc-tot')}
+    <div class="form-group" style="margin-top:8px"><label>Reason</label>
+      <input id="m-sc-n" type="text" placeholder="e.g., Broken bottles, QA fail, Spoilage"></div>`,
+  () => {
+    const qty = getBottles('m-sc-c','m-sc-b');
+    if (!qty) { toast('Enter a quantity'); return; }
+    if (qty > (item.bottles||0)) { toast(`Only ${bottleStr(item.bottles||0)} on hand`); return; }
+    item.bottles = (item.bottles||0) - qty;
+    S.txns.push({id:uid(), date:el('m-sc-d').value, type:'scrap', wineId:item.wineId,
+      locationId:item.locationId, bottles:qty, notes:el('m-sc-n').value, category:'unfinished'});
+    save(); renderAll(); closeModal();
+    toast(`Scrapped ${bottleStr(qty)}`);
+  });
+}
+
+function openDumpFermenting(batchId) {
+  const batch = S.fermenting.find(x=>x.id===batchId); if (!batch) return;
+  openModal('Dump Fermenting Wine', `
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">
+      <strong>${wName(batch.wineId)}</strong> · ${batch.vesselCount}× ${batch.vesselType} · ${parseFloat(batch.gallons||0).toFixed(1)} gal on hand
+    </p>
+    <div class="form-group"><label>Date</label>
+      <input id="m-dp-d" type="date" value="${today()}"></div>
+    <div class="form-group"><label>Dump Type</label>
+      <select id="m-dp-t" onchange="dumpTypeChange()">
+        <option value="partial">Partial dump (reduce gallons)</option>
+        <option value="full">Full dump (remove entire batch)</option>
+      </select>
+    </div>
+    <div id="m-dp-gal-row" class="form-group">
+      <label>Gallons to Dump</label>
+      <input id="m-dp-g" type="number" min="0.5" step="0.5" placeholder="e.g., 30">
+    </div>
+    <div class="form-group"><label>Reason</label>
+      <input id="m-dp-n" type="text" placeholder="e.g., Contamination, Off flavors, Tank needed"></div>`,
+  () => {
+    const type   = el('m-dp-t').value;
+    const gal    = type==='full' ? parseFloat(batch.gallons||0) : parseFloat(el('m-dp-g')?.value)||0;
+    if (!gal) { toast('Enter gallons to dump'); return; }
+    if (gal > parseFloat(batch.gallons||0)) { toast(`Only ${parseFloat(batch.gallons||0).toFixed(1)} gal on hand`); return; }
+    S.txns.push({id:uid(), date:el('m-dp-d').value, type:'dump', wineId:batch.wineId,
+      locationId:batch.locationId, gallons:gal, notes:el('m-dp-n').value, category:'fermenting'});
+    if (type==='full' || gal >= parseFloat(batch.gallons||0)) {
+      S.fermenting = S.fermenting.filter(b=>b.id!==batchId);
+    } else {
+      batch.gallons = parseFloat(batch.gallons||0) - gal;
+      batch.isFull = false;
+    }
+    save(); renderAll(); closeModal();
+    toast(`Dumped ${gal.toFixed(1)} gal`);
+  });
+}
+
+function dumpTypeChange() {
+  const full = el('m-dp-t')?.value === 'full';
+  el('m-dp-gal-row').style.display = full ? 'none' : '';
+}
+
+function openScrapSupply(supId) {
+  const sup = S.supplies.find(x=>x.id===supId); if (!sup) return;
+  const isGlass = sup.type === 'glass';
+  const onHand  = isGlass ? (sup.bottles||0) : (sup.units||0);
+  const onHandStr = isGlass ? bottleStr(onHand) : `${onHand} units`;
+
+  openModal('Scrap Supply', `
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">
+      <strong>${sup.name||sup.type}</strong> · On hand: ${onHandStr}
+    </p>
+    <div class="form-group"><label>Date</label>
+      <input id="m-ss-d" type="date" value="${today()}"></div>
+    ${isGlass
+      ? calcHtml('m-ss-c','m-ss-b','m-ss-tot')
+      : `<div class="form-group"><label>Quantity to Scrap</label>
+         <input id="m-ss-u" type="number" min="1" placeholder="e.g., 500"></div>`}
+    <div class="form-group" style="margin-top:8px"><label>Reason</label>
+      <input id="m-ss-n" type="text" placeholder="e.g., Broken, Defective, Expired"></div>`,
+  () => {
+    const date  = el('m-ss-d').value;
+    const notes = el('m-ss-n').value;
+    let qty;
+    if (isGlass) {
+      qty = getBottles('m-ss-c','m-ss-b');
+      if (!qty) { toast('Enter a quantity'); return; }
+      if (qty > (sup.bottles||0)) { toast(`Only ${bottleStr(sup.bottles||0)} on hand`); return; }
+      sup.bottles = (sup.bottles||0) - qty;
+      S.txns.push({id:uid(), date, type:'supplyScrap', itemName:`${sup.name||sup.type} (glass)`,
+        locationId:sup.locationId, bottles:qty, notes, category:'supply'});
+    } else {
+      qty = parseInt(el('m-ss-u')?.value)||0;
+      if (!qty) { toast('Enter a quantity'); return; }
+      if (qty > (sup.units||0)) { toast(`Only ${sup.units||0} on hand`); return; }
+      sup.units = (sup.units||0) - qty;
+      S.txns.push({id:uid(), date, type:'supplyScrap', itemName:`${sup.name||sup.type} (${sup.type})`,
+        locationId:sup.locationId, units:qty, notes, category:'supply'});
+    }
+    save(); renderAll(); closeModal();
+    toast('Scrapped and logged');
+  });
 }
 
 // ════════════════════════════════════════════════════════
