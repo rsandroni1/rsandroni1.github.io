@@ -18,7 +18,7 @@ email: info@chaos-cellars.com
 description: > # this means to ignore newlines until "baseurl:"
   Premium winery in the Finger Lakes region of New York 
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "https://chaos-cellars.com" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://rsandroni1.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 
 # Company Information
 company_name: Chaos Cellars
