@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>Wine Inventory · Cellar Management</title>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -394,6 +397,48 @@
       .stats-grid { grid-template-columns: 1fr 1fr; }
       .sec-hdr h2 { font-size: 17px; }
     }
+
+    /* ── SYNC INDICATOR ──────────────────────────────── */
+    #sync-pill {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.15);
+      color: rgba(255,255,255,.85);
+      white-space: nowrap;
+    }
+    #sync-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.5);
+      flex-shrink: 0;
+    }
+    #sync-dot.synced  { background: #6ddc8b; }
+    #sync-dot.saving  { background: #ffd166; }
+    #sync-dot.error   { background: #ff6b6b; }
+    #sync-dot.offline { background: rgba(255,255,255,.4); }
+
+    /* ── FIREBASE CARD ───────────────────────────────── */
+    .fb-connected {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: #e8f5ec;
+      border: 1px solid #b6dfc0;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .fb-connected .fb-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--success); flex-shrink: 0;
+    }
+    .fb-info { font-size: 13px; }
+    .fb-info strong { display: block; }
+    .fb-info span { font-size: 11px; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -403,6 +448,10 @@
   <div>
     <h1>Wine Inventory</h1>
     <div class="sub">Cellar Management System</div>
+  </div>
+  <div id="sync-pill">
+    <div id="sync-dot" class="offline"></div>
+    <span id="sync-label">Local only</span>
   </div>
 </header>
 
@@ -528,6 +577,11 @@
       <div id="loc-list"></div>
     </div>
 
+    <div class="card" id="fb-card">
+      <div class="card-title">☁️ Firebase Cloud Sync</div>
+      <div id="fb-status"></div>
+    </div>
+
     <div class="card">
       <div class="card-title">Data Management</div>
       <div class="actions-row">
@@ -535,7 +589,7 @@
         <button class="btn btn-secondary btn-sm" onclick="triggerImport()">Import JSON Backup</button>
       </div>
       <p style="font-size:12px;color:var(--muted);margin-top:6px">
-        All data is stored in your browser's local storage on this device. Export regularly to back up, or to transfer to another device.
+        Export regularly as a backup. If Firebase is connected, data is shared across all devices automatically.
       </p>
     </div>
   </div>
@@ -569,7 +623,18 @@ let S = {
   txns:       []    // transaction log
 };
 
-function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch(e) {} }
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch(e) {}
+  if (_fbDb && _fbUser) {
+    setSyncStatus('saving');
+    clearTimeout(_fbSaveTimer);
+    _fbSaveTimer = setTimeout(() => {
+      _fbDb.ref('wine_inventory').set(S)
+        .then(()  => setSyncStatus('synced'))
+        .catch(()  => setSyncStatus('error'));
+    }, 700);
+  }
+}
 function load() { try { const r = localStorage.getItem(STORAGE_KEY); if (r) S = JSON.parse(r); } catch(e) {} }
 function uid()  { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
@@ -620,6 +685,7 @@ function renderAll() {
   renderTransactions();
   renderWineList();
   renderLocList();
+  renderFBStatus();
 }
 
 function populateFilters() {
@@ -1500,6 +1566,222 @@ function importJSON(evt) {
 }
 
 // ════════════════════════════════════════════════════════
+// FIREBASE SYNC
+// ════════════════════════════════════════════════════════
+const FB_CFG_KEY = 'wine_fb_cfg_v1';
+let _fbApp      = null;
+let _fbAuth     = null;
+let _fbDb       = null;
+let _fbUser     = null;
+let _fbSaveTimer = null;
+let _fbListening = false;
+
+function fbCfgLoad() {
+  try { return JSON.parse(localStorage.getItem(FB_CFG_KEY)||'null'); } catch(e) { return null; }
+}
+
+function setSyncStatus(status) {
+  const dot   = el('sync-dot');
+  const label = el('sync-label');
+  if (!dot || !label) return;
+  dot.className = '';
+  const map = {
+    synced:  ['synced',  '☁ Synced'],
+    saving:  ['saving',  'Saving…'],
+    error:   ['error',   'Sync Error'],
+    offline: ['offline', 'Local only'],
+    auth:    ['saving',  'Sign in to sync']
+  };
+  const [cls, txt] = map[status] || map.offline;
+  dot.classList.add(cls);
+  label.textContent = txt;
+}
+
+function fbInit(cfg) {
+  try {
+    if (firebase.apps.length) firebase.apps[0].delete();
+    _fbApp  = firebase.initializeApp(cfg);
+    _fbAuth = firebase.auth();
+    _fbDb   = firebase.database();
+    localStorage.setItem(FB_CFG_KEY, JSON.stringify(cfg));
+
+    _fbAuth.onAuthStateChanged(user => {
+      _fbUser = user;
+      if (user) {
+        fbStartSync();
+      } else {
+        setSyncStatus('auth');
+        _fbListening = false;
+      }
+      renderFBStatus();
+    });
+    return true;
+  } catch(e) {
+    console.error('Firebase init:', e);
+    return false;
+  }
+}
+
+function fbStartSync() {
+  if (_fbListening) return;
+  _fbListening = true;
+  setSyncStatus('saving');
+
+  _fbDb.ref('wine_inventory').on('value', snap => {
+    const remote = snap.val();
+    if (remote && remote.wines) {
+      const incoming = JSON.stringify(remote);
+      const current  = JSON.stringify(S);
+      if (incoming !== current) {
+        S = remote;
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch(e) {}
+        if (!el('overlay').classList.contains('open')) renderAll();
+      }
+      setSyncStatus('synced');
+    } else {
+      // No remote data yet — push local data up
+      _fbDb.ref('wine_inventory').set(S)
+        .then(() => setSyncStatus('synced'))
+        .catch(() => setSyncStatus('error'));
+    }
+  }, () => setSyncStatus('error'));
+}
+
+function fbDisconnect() {
+  if (!confirm('Disconnect Firebase? Data already saved in the cloud stays there. The app will switch back to local-only mode.')) return;
+  if (_fbDb)   { _fbDb.ref('wine_inventory').off(); _fbListening = false; }
+  if (_fbAuth) _fbAuth.signOut();
+  if (_fbApp)  _fbApp.delete().catch(()=>{});
+  _fbApp = _fbAuth = _fbDb = _fbUser = null;
+  localStorage.removeItem(FB_CFG_KEY);
+  setSyncStatus('offline');
+  renderFBStatus();
+  toast('Firebase disconnected');
+}
+
+async function fbSignIn() {
+  const email = el('fb-email')?.value?.trim();
+  const pass  = el('fb-pass')?.value;
+  if (!email || !pass) { toast('Enter email and password'); return; }
+  try {
+    await _fbAuth.signInWithEmailAndPassword(email, pass);
+    toast('Signed in!');
+  } catch(e) {
+    const msg = e.code === 'auth/wrong-password'  ? 'Incorrect password' :
+                e.code === 'auth/user-not-found'   ? 'No account with that email' :
+                e.code === 'auth/invalid-email'    ? 'Invalid email address' : e.message;
+    toast('Sign in failed: ' + msg);
+  }
+}
+
+async function fbSignUp() {
+  const email = el('fb-email')?.value?.trim();
+  const pass  = el('fb-pass')?.value;
+  if (!email || !pass) { toast('Enter email and password'); return; }
+  if (pass.length < 6) { toast('Password must be at least 6 characters'); return; }
+  try {
+    await _fbAuth.createUserWithEmailAndPassword(email, pass);
+    toast('Account created — you\'re signed in!');
+  } catch(e) {
+    const msg = e.code === 'auth/email-already-in-use' ? 'That email already has an account' :
+                e.code === 'auth/invalid-email'         ? 'Invalid email address' : e.message;
+    toast('Sign up failed: ' + msg);
+  }
+}
+
+function fbSignOut() {
+  _fbAuth?.signOut().then(() => { _fbUser = null; setSyncStatus('auth'); renderFBStatus(); toast('Signed out'); });
+}
+
+function openFBSetup() {
+  openModal('Connect Firebase', `
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+      Firebase gives you real-time sync so you and your partner always see the same data from any device.
+      Takes about 5 minutes to set up — free for this use case.
+    </p>
+    <div style="background:var(--surface-2);border-radius:8px;padding:12px;font-size:12px;margin-bottom:14px;line-height:1.7">
+      <strong>Setup steps:</strong><br>
+      1. Go to <strong>console.firebase.google.com</strong> → Create a project<br>
+      2. Click <strong>Build → Realtime Database</strong> → Create database → Start in test mode<br>
+      3. Click <strong>Build → Authentication</strong> → Get started → Enable <strong>Email/Password</strong><br>
+      4. Go to <strong>Project Settings</strong> (gear icon) → scroll to "Your apps" → click Web (&lt;/&gt;) → Register app<br>
+      5. Copy the <code>firebaseConfig</code> object and paste below
+    </div>
+    <div class="form-group">
+      <label>Firebase Config (paste the { … } object)</label>
+      <textarea id="fb-cfg-input" rows="7" placeholder='{&#10;  "apiKey": "...",&#10;  "authDomain": "...",&#10;  "databaseURL": "...",&#10;  "projectId": "...",&#10;  "storageBucket": "...",&#10;  "messagingSenderId": "...",&#10;  "appId": "..."&#10;}'
+        style="font-family:monospace;font-size:12px"></textarea>
+    </div>
+    <p style="font-size:11px;color:var(--muted)">
+      Your config is stored only in this browser's local storage — it is never sent anywhere else.
+    </p>`,
+  () => {
+    let raw = el('fb-cfg-input')?.value?.trim() || '';
+    // Strip "const firebaseConfig = " wrapper if pasted from Firebase console
+    raw = raw.replace(/^[^{]*/, '').replace(/[^}]*$/, '');
+    try {
+      const cfg = JSON.parse(raw);
+      if (!cfg.apiKey || !cfg.databaseURL) {
+        toast('Config missing apiKey or databaseURL — check you copied the full object');
+        return;
+      }
+      if (fbInit(cfg)) {
+        closeModal();
+        toast('Firebase connected! Sign in below to start syncing.');
+        renderFBStatus();
+      } else {
+        toast('Connection failed — double-check the config and try again');
+      }
+    } catch(e) {
+      toast('Could not parse config — make sure it\'s valid JSON');
+    }
+  });
+}
+
+function renderFBStatus() {
+  const c = el('fb-status'); if (!c) return;
+  const cfg = fbCfgLoad();
+
+  if (!cfg) {
+    c.innerHTML = `
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">
+        Connect Firebase so you and your partner see the same live inventory from any device or phone.
+      </p>
+      <button class="btn btn-primary btn-sm" onclick="openFBSetup()">Connect Firebase</button>`;
+    return;
+  }
+
+  if (!_fbUser) {
+    c.innerHTML = `
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Firebase is configured. Sign in to start syncing.</p>
+      <div class="form-group"><label>Email</label><input id="fb-email" type="email" autocomplete="email" placeholder="you@example.com"></div>
+      <div class="form-group"><label>Password</label><input id="fb-pass" type="password" autocomplete="current-password" placeholder="Password"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="fbSignIn()">Sign In</button>
+        <button class="btn btn-secondary btn-sm" onclick="fbSignUp()">Create Account</button>
+        <button class="btn btn-secondary btn-sm" onclick="fbDisconnect()">Disconnect</button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:10px">
+        Both you and your partner need to create accounts and sign in with the same Firebase project.
+      </p>`;
+    return;
+  }
+
+  c.innerHTML = `
+    <div class="fb-connected">
+      <div class="fb-dot"></div>
+      <div class="fb-info">
+        <strong>Syncing · ${_fbUser.email}</strong>
+        <span>Changes appear on all signed-in devices in real-time</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary btn-xs" onclick="fbSignOut()">Sign Out</button>
+      <button class="btn btn-secondary btn-xs" onclick="fbDisconnect()">Disconnect Firebase</button>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
 // TOAST
 // ════════════════════════════════════════════════════════
 let _toastTmr;
@@ -1516,6 +1798,9 @@ function toast(msg) {
 // ════════════════════════════════════════════════════════
 load();
 renderAll();
+// Auto-reconnect Firebase if previously configured
+const _savedCfg = fbCfgLoad();
+if (_savedCfg) fbInit(_savedCfg);
 </script>
 </body>
 </html>
