@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Wine Inventory · Cellar Management</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #6e2031;
+      --primary-hover: #8a2840;
+      --accent: #b5893a;
+      --bg: #faf7f4;
+      --surface: #ffffff;
+      --surface-2: #f4ede6;
+      --border: #e4d8ce;
+      --text: #251212;
+      --muted: #7a6060;
+      --success: #2e7040;
+      --danger: #b83025;
+      --warn: #c27000;
+      --info: #1d5fa0;
+      --shadow: 0 2px 8px rgba(110,32,49,.08);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* ── HEADER ─────────────────────────────────────── */
+    .app-header {
+      background: var(--primary);
+      color: #fff;
+      padding: 11px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 2px 10px rgba(0,0,0,.25);
+    }
+    .app-header .logo { font-size: 24px; line-height: 1; }
+    .app-header h1 { font-size: 17px; font-weight: 700; letter-spacing: .2px; }
+    .app-header .sub { font-size: 11px; opacity: .75; margin-top: 1px; }
+
+    /* ── NAV ─────────────────────────────────────────── */
+    .nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      position: sticky;
+      top: 54px;
+      z-index: 190;
+    }
+    .nav::-webkit-scrollbar { display: none; }
+    .nav-btn {
+      padding: 11px 14px;
+      border: none;
+      background: none;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      border-bottom: 3px solid transparent;
+      transition: color .15s, border-color .15s;
+    }
+    .nav-btn:hover { color: var(--primary); }
+    .nav-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 700; }
+
+    /* ── LAYOUT ──────────────────────────────────────── */
+    .main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── CARDS ───────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* ── SECTION HEADER ──────────────────────────────── */
+    .sec-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .sec-hdr h2 { font-size: 19px; font-weight: 700; color: var(--primary); }
+
+    /* ── DASHBOARD STATS GRID ────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 12px;
+      border-left: 4px solid var(--primary);
+      box-shadow: var(--shadow);
+    }
+    .stat-card.accent  { border-left-color: var(--accent); }
+    .stat-card.success { border-left-color: var(--success); }
+    .stat-card.info    { border-left-color: var(--info); }
+    .stat-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
+    .stat-val { font-size: 26px; font-weight: 800; color: var(--primary); line-height: 1.1; }
+    .stat-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── TABLE ───────────────────────────────────────── */
+    .tbl-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      background: var(--surface-2);
+      padding: 9px 11px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      white-space: nowrap;
+    }
+    tbody td { padding: 9px 11px; border-top: 1px solid var(--border); vertical-align: middle; }
+    tbody tr:hover { background: var(--bg); }
+
+    /* ── BUTTONS ─────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: filter .12s, transform .1s;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary  { background: var(--primary);  color: #fff; }
+    .btn-primary:hover  { filter: brightness(1.12); }
+    .btn-success  { background: var(--success);  color: #fff; }
+    .btn-success:hover  { filter: brightness(1.1); }
+    .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-danger   { background: var(--danger);   color: #fff; }
+    .btn-danger:hover   { filter: brightness(1.1); }
+    .btn-sm  { padding: 6px 12px; font-size: 13px; }
+    .btn-xs  { padding: 3px 9px; font-size: 11px; border-radius: 5px; }
+    .btn-accent { background: var(--accent); color: #fff; }
+
+    .actions-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+
+    /* ── FILTER ROW ──────────────────────────────────── */
+    .filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+    .filter-row select,
+    .filter-row input[type="date"],
+    .filter-row input[type="text"] {
+      padding: 7px 10px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      font-size: 13px;
+      font-family: inherit;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    /* ── FORMS ───────────────────────────────────────── */
+    .form-group { margin-bottom: 12px; }
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-bottom: 4px;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      font-size: 14px;
+      font-family: inherit;
+      background: var(--surface);
+      color: var(--text);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(110,32,49,.1);
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 460px) { .form-row { grid-template-columns: 1fr; } }
+
+    .calc-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-top: 4px;
+      min-height: 34px;
+    }
+
+    /* ── SUB TABS ────────────────────────────────────── */
+    .sub-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sub-tab {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      border: none;
+      background: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color .15s;
+    }
+    .sub-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 700; }
+
+    /* ── BADGES ──────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+    }
+    .b-inbond   { background: #dff0e4; color: #1d5a2a; }
+    .b-outbond  { background: #fdf0dc; color: #8a5200; }
+    .b-sale     { background: #deeafb; color: #1244a0; }
+    .b-sample   { background: #fce5f4; color: #8a1f68; }
+    .b-library  { background: #ede8ff; color: #4a1f9a; }
+    .b-add      { background: #dff0e4; color: #1d5a2a; }
+    .b-remove   { background: #fde8e8; color: #a02020; }
+    .b-adjust   { background: #fdf0dc; color: #8a5200; }
+
+    /* ── WINE DOT ────────────────────────────────────── */
+    .dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── MODAL ───────────────────────────────────────── */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 500;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 14px;
+      overflow-y: auto;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      margin: auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,.25);
+    }
+    .modal-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--primary); }
+    .modal-close {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: var(--surface-2);
+      cursor: pointer;
+      font-size: 15px;
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-close:hover { background: var(--border); }
+    .modal-ftr {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── SETTINGS LIST ───────────────────────────────── */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+    }
+    .setting-row:last-child { border-bottom: none; }
+
+    /* ── EMPTY STATE ─────────────────────────────────── */
+    .empty { text-align: center; padding: 36px 16px; color: var(--muted); }
+    .empty .ico { font-size: 38px; margin-bottom: 8px; }
+    .empty p { font-size: 14px; }
+
+    /* ── TOAST ───────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1a1a1a;
+      color: #fff;
+      padding: 9px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      z-index: 9999;
+      transition: transform .25s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── MISC ────────────────────────────────────────── */
+    .wine-name-cell { display: flex; align-items: center; gap: 6px; }
+    .section-divider {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      padding: 6px 0 4px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    @media (max-width: 600px) {
+      .main { padding: 10px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .sec-hdr h2 { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="logo">🍷</div>
+  <div>
+    <h1>Wine Inventory</h1>
+    <div class="sub">Cellar Management System</div>
+  </div>
+</header>
+
+<nav class="nav" id="main-nav">
+  <button class="nav-btn active" data-sec="dashboard" onclick="showSection('dashboard')">Dashboard</button>
+  <button class="nav-btn" data-sec="finished"   onclick="showSection('finished')">Finished Goods</button>
+  <button class="nav-btn" data-sec="unfinished" onclick="showSection('unfinished')">Unfinished</button>
+  <button class="nav-btn" data-sec="supplies"   onclick="showSection('supplies')">Supplies</button>
+  <button class="nav-btn" data-sec="transactions" onclick="showSection('transactions')">Transactions</button>
+  <button class="nav-btn" data-sec="settings"   onclick="showSection('settings')">Settings</button>
+</nav>
+
+<div class="main">
+
+  <!-- ═══════════════════════════════════════ DASHBOARD ═══ -->
+  <div id="sec-dashboard" class="section active">
+    <div class="sec-hdr">
+      <h2>Overview</h2>
+      <button class="btn btn-primary btn-sm" onclick="openTransaction()">+ Record Transaction</button>
+    </div>
+    <div id="db-stats" class="stats-grid"></div>
+    <div class="card">
+      <div class="card-title">Finished Goods Summary</div>
+      <div id="db-wines"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Fermenting</div>
+      <div id="db-fermenting"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════ FINISHED GOODS ═══ -->
+  <div id="sec-finished" class="section">
+    <div class="sec-hdr">
+      <h2>Finished Goods</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="openAddFinished()">+ Add Inventory</button>
+        <button class="btn btn-primary btn-sm" onclick="openTransaction()">Record Transaction</button>
+      </div>
+    </div>
+    <div class="filter-row">
+      <select id="fg-wine-f" onchange="renderFinished()"><option value="">All Wines</option></select>
+      <select id="fg-loc-f"  onchange="renderFinished()"><option value="">All Locations</option></select>
+    </div>
+    <div id="fg-body"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ UNFINISHED ═══ -->
+  <div id="sec-unfinished" class="section">
+    <div class="sec-hdr"><h2>Unfinished Wine</h2></div>
+    <div class="sub-tabs">
+      <button class="sub-tab active" data-uf="bottles"    onclick="showUFTab('bottles')">In Bottle</button>
+      <button class="sub-tab"        data-uf="fermenting" onclick="showUFTab('fermenting')">Fermenting</button>
+    </div>
+    <div id="uf-bottles-panel">
+      <div class="actions-row">
+        <button class="btn btn-secondary btn-sm" onclick="openAddUnfinished()">+ Add / Adjust</button>
+      </div>
+      <div id="uf-bottles-body"></div>
+    </div>
+    <div id="uf-fermenting-panel" style="display:none">
+      <div class="actions-row">
+        <button class="btn btn-secondary btn-sm" onclick="openAddFermenting()">+ Add Batch</button>
+      </div>
+      <div id="uf-fermenting-body"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ SUPPLIES ═══ -->
+  <div id="sec-supplies" class="section">
+    <div class="sec-hdr">
+      <h2>Supplies</h2>
+      <button class="btn btn-secondary btn-sm" onclick="openAddSupply()">+ Add / Adjust</button>
+    </div>
+    <div class="sub-tabs">
+      <button class="sub-tab active" data-sup="glass"   onclick="showSupTab('glass')">Glass</button>
+      <button class="sub-tab"        data-sup="cork"    onclick="showSupTab('cork')">Corks</button>
+      <button class="sub-tab"        data-sup="closure" onclick="showSupTab('closure')">Closures</button>
+    </div>
+    <div id="sup-body"></div>
+  </div>
+
+  <!-- ══════════════════════════════════ TRANSACTIONS ═══ -->
+  <div id="sec-transactions" class="section">
+    <div class="sec-hdr">
+      <h2>Transaction Log</h2>
+      <button class="btn btn-success btn-sm" onclick="exportExcel()">↓ Export Excel</button>
+    </div>
+    <div class="filter-row">
+      <select id="tx-type-f" onchange="renderTransactions()">
+        <option value="">All Types</option>
+        <option value="add">Add</option>
+        <option value="removeFromBond">Remove from Bond</option>
+        <option value="sale">Sale</option>
+        <option value="sample">Marketing Sample</option>
+        <option value="library">Library</option>
+        <option value="adjustment">Adjustment</option>
+      </select>
+      <select id="tx-wine-f" onchange="renderTransactions()"><option value="">All Wines</option></select>
+      <input type="date" id="tx-from" onchange="renderTransactions()" title="From date">
+      <input type="date" id="tx-to"   onchange="renderTransactions()" title="To date">
+    </div>
+    <div id="tx-body"></div>
+  </div>
+
+  <!-- ════════════════════════════════════════ SETTINGS ═══ -->
+  <div id="sec-settings" class="section">
+    <div class="sec-hdr"><h2>Settings</h2></div>
+
+    <div class="card">
+      <div class="card-title">
+        Wine List
+        <button class="btn btn-primary btn-xs" onclick="openAddWine()">+ Add Wine</button>
+      </div>
+      <div id="wine-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        Locations
+        <button class="btn btn-primary btn-xs" onclick="openAddLocation()">+ Add Location</button>
+      </div>
+      <div id="loc-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Data Management</div>
+      <div class="actions-row">
+        <button class="btn btn-secondary btn-sm" onclick="exportJSON()">Export JSON Backup</button>
+        <button class="btn btn-secondary btn-sm" onclick="triggerImport()">Import JSON Backup</button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:6px">
+        All data is stored in your browser's local storage on this device. Export regularly to back up, or to transfer to another device.
+      </p>
+    </div>
+  </div>
+
+</div><!-- /.main -->
+
+<div id="toast"></div>
+
+<div id="overlay" class="overlay" onclick="overlayClick(event)">
+  <div class="modal" id="modal"></div>
+</div>
+
+<input type="file" id="import-input" accept=".json" style="display:none" onchange="importJSON(event)">
+
+<script>
+'use strict';
+
+// ════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════
+const STORAGE_KEY = 'wine_inv_v3';
+const WINE_COLORS = ['#6e2031','#1d5fa0','#2e7040','#8a5200','#5b2094','#00777f','#b34500','#8a1f68'];
+
+let S = {
+  wines:      [],   // [{id, name}]
+  locations:  [],   // [{id, name}]
+  finished:   [],   // [{id, wineId, locationId, inBond, outBond}]
+  unfinBtl:   [],   // [{id, wineId, locationId, bottles, notes}]
+  fermenting: [],   // [{id, wineId, locationId, vesselType, vesselCount, isFull, gallons, notes}]
+  supplies:   [],   // [{id, type, name, locationId, bottles, units, notes}]
+  txns:       []    // transaction log
+};
+
+function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch(e) {} }
+function load() { try { const r = localStorage.getItem(STORAGE_KEY); if (r) S = JSON.parse(r); } catch(e) {} }
+function uid()  { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+// ════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════
+function bottleStr(n) {
+  n = Math.max(0, parseInt(n)||0);
+  const c = Math.floor(n/12), b = n%12;
+  if (c && b) return `${c} cs + ${b} btl`;
+  if (c)      return `${c} cs`;
+  return `${b} btl`;
+}
+
+function wName(id) { return (S.wines.find(w=>w.id===id)||{name:'—'}).name; }
+function lName(id) { return (S.locations.find(l=>l.id===id)||{name:'—'}).name; }
+function wColor(id){ const i=S.wines.findIndex(w=>w.id===id); return WINE_COLORS[Math.max(0,i)%WINE_COLORS.length]; }
+
+function today() { return new Date().toISOString().slice(0,10); }
+function fmtD(d)  { if(!d) return ''; const [y,m,dd]=d.split('-'); return `${m}/${dd}/${y}`; }
+
+function el(id) { return document.getElementById(id); }
+
+// ════════════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════════════
+let curSec = 'dashboard';
+
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  el('sec-'+name).classList.add('active');
+  document.querySelector(`[data-sec="${name}"]`)?.classList.add('active');
+  curSec = name;
+  renderAll();
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER ALL
+// ════════════════════════════════════════════════════════
+function renderAll() {
+  populateFilters();
+  renderDashboard();
+  renderFinished();
+  renderUnfinBtl();
+  renderFermenting();
+  renderSupplies();
+  renderTransactions();
+  renderWineList();
+  renderLocList();
+}
+
+function populateFilters() {
+  syncSelect('fg-wine-f', S.wines, 'All Wines');
+  syncSelect('fg-loc-f',  S.locations, 'All Locations');
+  syncSelect('tx-wine-f', S.wines, 'All Wines');
+}
+
+function syncSelect(id, items, placeholder) {
+  const s = el(id); if (!s) return;
+  const cur = s.value;
+  s.innerHTML = `<option value="">${placeholder}</option>` +
+    items.map(i=>`<option value="${i.id}"${i.id===cur?' selected':''}>${i.name}</option>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════════════════
+function renderDashboard() {
+  const totalIB = S.finished.reduce((a,g)=>a+(g.inBond||0),0);
+  const totalOB = S.finished.reduce((a,g)=>a+(g.outBond||0),0);
+  const totalFG = S.fermenting.reduce((a,b)=>a+(parseFloat(b.gallons)||0),0);
+
+  el('db-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-lbl">In Bond</div>
+      <div class="stat-val">${Math.floor(totalIB/12)}</div>
+      <div class="stat-sub">cases · ${totalIB} btl</div>
+    </div>
+    <div class="stat-card accent">
+      <div class="stat-lbl">Out of Bond</div>
+      <div class="stat-val">${Math.floor(totalOB/12)}</div>
+      <div class="stat-sub">cases · ${totalOB} btl</div>
+    </div>
+    <div class="stat-card success">
+      <div class="stat-lbl">Fermenting</div>
+      <div class="stat-val">${totalFG.toFixed(0)}</div>
+      <div class="stat-sub">gallons total</div>
+    </div>
+    <div class="stat-card info">
+      <div class="stat-lbl">Wines</div>
+      <div class="stat-val">${S.wines.length}</div>
+      <div class="stat-sub">labels in system</div>
+    </div>`;
+
+  if (!S.wines.length) {
+    el('db-wines').innerHTML = `<div class="empty"><div class="ico">🍾</div><p>Add wines in Settings to get started.</p></div>`;
+  } else {
+    el('db-wines').innerHTML = S.wines.map(w => {
+      const fg = S.finished.filter(g=>g.wineId===w.id);
+      const ib = fg.reduce((a,g)=>a+(g.inBond||0),0);
+      const ob = fg.reduce((a,g)=>a+(g.outBond||0),0);
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div class="wine-name-cell"><span class="dot" style="background:${wColor(w.id)}"></span><strong>${w.name}</strong></div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
+          <span class="badge b-inbond">IB: ${bottleStr(ib)}</span>
+          <span class="badge b-outbond">OB: ${bottleStr(ob)}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  if (!S.fermenting.length) {
+    el('db-fermenting').innerHTML = `<div class="empty"><div class="ico">🫙</div><p>No fermenting batches yet.</p></div>`;
+  } else {
+    el('db-fermenting').innerHTML = S.fermenting.map(b => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div class="wine-name-cell">
+          <span class="dot" style="background:${wColor(b.wineId)}"></span>
+          <div><div style="font-weight:600">${wName(b.wineId)}</div>
+          <div style="font-size:11px;color:var(--muted)">${b.vesselCount}× ${b.vesselType} · ${lName(b.locationId)}</div></div>
+        </div>
+        <div style="font-weight:700;color:var(--success)">${parseFloat(b.gallons||0).toFixed(1)} gal</div>
+      </div>`).join('');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// FINISHED GOODS
+// ════════════════════════════════════════════════════════
+function renderFinished() {
+  const wf = el('fg-wine-f')?.value;
+  const lf = el('fg-loc-f')?.value;
+  let rows = S.finished;
+  if (wf) rows = rows.filter(g=>g.wineId===wf);
+  if (lf) rows = rows.filter(g=>g.locationId===lf);
+
+  if (!rows.length) {
+    el('fg-body').innerHTML = `<div class="empty"><div class="ico">🍷</div><p>No finished goods recorded yet.</p></div>`;
+    return;
+  }
+
+  el('fg-body').innerHTML = `<div class="tbl-wrap"><table>
+    <thead><tr><th>Wine</th><th>Location</th><th>In Bond</th><th>Out of Bond</th><th>Actions</th></tr></thead>
+    <tbody>${rows.map(g=>`<tr>
+      <td><div class="wine-name-cell"><span class="dot" style="background:${wColor(g.wineId)}"></span><strong>${wName(g.wineId)}</strong></div></td>
+      <td>${lName(g.locationId)}</td>
+      <td><strong>${bottleStr(g.inBond)}</strong><br><span style="font-size:11px;color:var(--muted)">${g.inBond||0} btl</span></td>
+      <td><strong>${bottleStr(g.outBond)}</strong><br><span style="font-size:11px;color:var(--muted)">${g.outBond||0} btl</span></td>
+      <td><div style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="btn btn-xs btn-primary"   onclick="openTransaction(null,'${g.id}')">Transact</button>
+        <button class="btn btn-xs btn-secondary" onclick="openAddFinished('${g.id}')">Edit</button>
+        <button class="btn btn-xs btn-danger"    onclick="delFinished('${g.id}')">Del</button>
+      </div></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+function delFinished(id) {
+  if (!confirm('Delete this inventory record?')) return;
+  S.finished = S.finished.filter(g=>g.id!==id);
+  save(); renderAll(); toast('Deleted');
+}
+
+// ════════════════════════════════════════════════════════
+// UNFINISHED BOTTLES
+// ════════════════════════════════════════════════════════
+let curUFTab = 'bottles';
+
+function showUFTab(tab) {
+  curUFTab = tab;
+  document.querySelectorAll('[data-uf]').forEach(b=>b.classList.toggle('active', b.dataset.uf===tab));
+  el('uf-bottles-panel').style.display    = tab==='bottles' ? '' : 'none';
+  el('uf-fermenting-panel').style.display = tab==='fermenting' ? '' : 'none';
+}
+
+function renderUnfinBtl() {
+  if (!S.unfinBtl.length) {
+    el('uf-bottles-body').innerHTML = `<div class="empty"><div class="ico">🍾</div><p>No unfinished bottled wine recorded.</p></div>`;
+    return;
+  }
+  el('uf-bottles-body').innerHTML = `<div class="tbl-wrap"><table>
+    <thead><tr><th>Wine</th><th>Location</th><th>Quantity</th><th>Notes</th><th>Actions</th></tr></thead>
+    <tbody>${S.unfinBtl.map(i=>`<tr>
+      <td><div class="wine-name-cell"><span class="dot" style="background:${wColor(i.wineId)}"></span><strong>${wName(i.wineId)}</strong></div></td>
+      <td>${lName(i.locationId)}</td>
+      <td><strong>${bottleStr(i.bottles)}</strong><br><span style="font-size:11px;color:var(--muted)">${i.bottles||0} btl</span></td>
+      <td style="font-size:12px;color:var(--muted)">${i.notes||''}</td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-xs btn-secondary" onclick="openAddUnfinished('${i.id}')">Edit</button>
+        <button class="btn btn-xs btn-danger"    onclick="delUnfin('${i.id}')">Del</button>
+      </div></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+function delUnfin(id) {
+  if (!confirm('Delete?')) return;
+  S.unfinBtl = S.unfinBtl.filter(i=>i.id!==id);
+  save(); renderAll(); toast('Deleted');
+}
+
+// ════════════════════════════════════════════════════════
+// FERMENTING
+// ════════════════════════════════════════════════════════
+function renderFermenting() {
+  if (!S.fermenting.length) {
+    el('uf-fermenting-body').innerHTML = `<div class="empty"><div class="ico">🫙</div><p>No fermenting batches recorded.</p></div>`;
+    return;
+  }
+  el('uf-fermenting-body').innerHTML = `<div class="tbl-wrap"><table>
+    <thead><tr><th>Wine</th><th>Location</th><th>Vessel</th><th>Status</th><th>Gallons</th><th>Notes</th><th>Actions</th></tr></thead>
+    <tbody>${S.fermenting.map(b=>{
+      const vGal = b.vesselType==='barrel' ? 60 : b.vesselType==='drum' ? 55 : null;
+      return `<tr>
+        <td><div class="wine-name-cell"><span class="dot" style="background:${wColor(b.wineId)}"></span><strong>${wName(b.wineId)}</strong></div></td>
+        <td>${lName(b.locationId)}</td>
+        <td>${b.vesselCount}× ${b.vesselType}${vGal?` (${vGal} gal)`:''}</td>
+        <td>${b.isFull?'Full':'Partial'}</td>
+        <td><strong>${parseFloat(b.gallons||0).toFixed(1)}</strong></td>
+        <td style="font-size:12px;color:var(--muted)">${b.notes||''}</td>
+        <td><div style="display:flex;gap:4px">
+          <button class="btn btn-xs btn-secondary" onclick="openAddFermenting('${b.id}')">Edit</button>
+          <button class="btn btn-xs btn-danger"    onclick="delFermenting('${b.id}')">Del</button>
+        </div></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+function delFermenting(id) {
+  if (!confirm('Delete this batch?')) return;
+  S.fermenting = S.fermenting.filter(b=>b.id!==id);
+  save(); renderAll(); toast('Deleted');
+}
+
+// ════════════════════════════════════════════════════════
+// SUPPLIES
+// ════════════════════════════════════════════════════════
+let curSupTab = 'glass';
+
+function showSupTab(tab) {
+  curSupTab = tab;
+  document.querySelectorAll('[data-sup]').forEach(b=>b.classList.toggle('active', b.dataset.sup===tab));
+  renderSupplies();
+}
+
+function renderSupplies() {
+  const items = S.supplies.filter(s=>s.type===curSupTab);
+  if (!items.length) {
+    el('sup-body').innerHTML = `<div class="empty"><div class="ico">📦</div><p>No ${curSupTab} inventory yet.</p></div>`;
+    return;
+  }
+  if (curSupTab === 'glass') {
+    el('sup-body').innerHTML = `<div class="tbl-wrap"><table>
+      <thead><tr><th>Name</th><th>Location</th><th>Cases</th><th>Bottles</th><th>Total Btl</th><th>Notes</th><th>Actions</th></tr></thead>
+      <tbody>${items.map(s=>`<tr>
+        <td><strong>${s.name||'—'}</strong></td>
+        <td>${lName(s.locationId)}</td>
+        <td>${Math.floor((s.bottles||0)/12)}</td>
+        <td>${(s.bottles||0)%12}</td>
+        <td>${s.bottles||0}</td>
+        <td style="font-size:12px;color:var(--muted)">${s.notes||''}</td>
+        <td><div style="display:flex;gap:4px">
+          <button class="btn btn-xs btn-secondary" onclick="openAddSupply('${s.id}')">Edit</button>
+          <button class="btn btn-xs btn-danger"    onclick="delSupply('${s.id}')">Del</button>
+        </div></td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  } else {
+    el('sup-body').innerHTML = `<div class="tbl-wrap"><table>
+      <thead><tr><th>Name</th><th>Location</th><th>Quantity</th><th>Notes</th><th>Actions</th></tr></thead>
+      <tbody>${items.map(s=>`<tr>
+        <td><strong>${s.name||'—'}</strong></td>
+        <td>${lName(s.locationId)}</td>
+        <td><strong>${s.units||0}</strong></td>
+        <td style="font-size:12px;color:var(--muted)">${s.notes||''}</td>
+        <td><div style="display:flex;gap:4px">
+          <button class="btn btn-xs btn-secondary" onclick="openAddSupply('${s.id}')">Edit</button>
+          <button class="btn btn-xs btn-danger"    onclick="delSupply('${s.id}')">Del</button>
+        </div></td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+}
+
+function delSupply(id) {
+  if (!confirm('Delete?')) return;
+  S.supplies = S.supplies.filter(s=>s.id!==id);
+  save(); renderAll(); toast('Deleted');
+}
+
+// ════════════════════════════════════════════════════════
+// TRANSACTIONS
+// ════════════════════════════════════════════════════════
+const TX_LABEL  = {add:'Add',removeFromBond:'Remove from Bond',sale:'Sale',sample:'Marketing Sample',library:'Library',adjustment:'Adjustment'};
+const TX_BADGE  = {add:'b-add',removeFromBond:'b-remove',sale:'b-sale',sample:'b-sample',library:'b-library',adjustment:'b-adjust'};
+const TX_CHAN   = {customer:'Customer',store:'Wine Store',restaurant:'Restaurant'};
+
+function renderTransactions() {
+  syncSelect('tx-wine-f', S.wines, 'All Wines');
+  let txs = [...S.txns].reverse();
+  const tf = el('tx-type-f')?.value, wf = el('tx-wine-f')?.value;
+  const df = el('tx-from')?.value,   dt = el('tx-to')?.value;
+  if (tf) txs = txs.filter(t=>t.type===tf);
+  if (wf) txs = txs.filter(t=>t.wineId===wf);
+  if (df) txs = txs.filter(t=>t.date>=df);
+  if (dt) txs = txs.filter(t=>t.date<=dt);
+
+  if (!txs.length) {
+    el('tx-body').innerHTML = `<div class="empty"><div class="ico">📋</div><p>No transactions yet.</p></div>`;
+    return;
+  }
+
+  el('tx-body').innerHTML = `<div class="tbl-wrap"><table>
+    <thead><tr><th>Date</th><th>Wine / Item</th><th>Type</th><th>Quantity</th><th>Details</th><th>Notes</th><th></th></tr></thead>
+    <tbody>${txs.map(tx=>{
+      let qty = '';
+      if (tx.bottles != null) qty = bottleStr(tx.bottles) + `<br><span style="font-size:10px;color:var(--muted)">${tx.bottles} btl</span>`;
+      if (tx.gallons  != null) qty = `${tx.gallons} gal`;
+      if (tx.units    != null) qty = `${tx.units} units`;
+      const details = [
+        tx.bondSource ? (tx.bondSource==='inBond'?'from In Bond':'from Out of Bond') : '',
+        tx.channel    ? TX_CHAN[tx.channel]||tx.channel : '',
+        tx.recipient  ? `· ${tx.recipient}` : ''
+      ].filter(Boolean).join(' ');
+      const c = tx.wineId ? wColor(tx.wineId) : '#999';
+      return `<tr>
+        <td style="white-space:nowrap">${fmtD(tx.date)}</td>
+        <td><div class="wine-name-cell"><span class="dot" style="background:${c}"></span>${tx.wineId?wName(tx.wineId):(tx.itemName||'—')}</div></td>
+        <td><span class="badge ${TX_BADGE[tx.type]||'b-add'}">${TX_LABEL[tx.type]||tx.type}</span></td>
+        <td>${qty}</td>
+        <td style="font-size:12px;color:var(--muted)">${details}</td>
+        <td style="font-size:12px;color:var(--muted)">${tx.notes||''}</td>
+        <td><button class="btn btn-xs btn-danger" onclick="delTx('${tx.id}')">Del</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+function delTx(id) {
+  if (!confirm('Delete transaction log entry? This will NOT reverse the inventory change.')) return;
+  S.txns = S.txns.filter(t=>t.id!==id);
+  save(); renderTransactions(); toast('Entry deleted');
+}
+
+// ════════════════════════════════════════════════════════
+// SETTINGS LISTS
+// ════════════════════════════════════════════════════════
+function renderWineList() {
+  if (!S.wines.length) {
+    el('wine-list').innerHTML = `<p style="font-size:13px;color:var(--muted)">No wines yet.</p>`;
+    return;
+  }
+  el('wine-list').innerHTML = S.wines.map((w,i)=>`
+    <div class="setting-row">
+      <div class="wine-name-cell"><span class="dot" style="background:${WINE_COLORS[i%WINE_COLORS.length]}"></span><strong>${w.name}</strong></div>
+      <div style="display:flex;gap:5px">
+        <button class="btn btn-xs btn-secondary" onclick="editWine('${w.id}')">Edit</button>
+        <button class="btn btn-xs btn-danger"    onclick="delWine('${w.id}')">Del</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderLocList() {
+  if (!S.locations.length) {
+    el('loc-list').innerHTML = `<p style="font-size:13px;color:var(--muted)">No locations yet.</p>`;
+    return;
+  }
+  el('loc-list').innerHTML = S.locations.map(l=>`
+    <div class="setting-row">
+      <span><strong>📍 ${l.name}</strong></span>
+      <div style="display:flex;gap:5px">
+        <button class="btn btn-xs btn-secondary" onclick="editLoc('${l.id}')">Edit</button>
+        <button class="btn btn-xs btn-danger"    onclick="delLoc('${l.id}')">Del</button>
+      </div>
+    </div>`).join('');
+}
+
+function delWine(id) {
+  if (!confirm('Delete wine? Existing records will still reference it.')) return;
+  S.wines = S.wines.filter(w=>w.id!==id); save(); renderAll(); toast('Deleted');
+}
+function delLoc(id) {
+  if (!confirm('Delete location?')) return;
+  S.locations = S.locations.filter(l=>l.id!==id); save(); renderAll(); toast('Deleted');
+}
+
+// ════════════════════════════════════════════════════════
+// MODAL SYSTEM
+// ════════════════════════════════════════════════════════
+let _onSave = null;
+
+function openModal(title, body, onSave) {
+  el('modal').innerHTML = `
+    <div class="modal-hdr">
+      <div class="modal-title">${title}</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body">${body}</div>
+    <div class="modal-ftr">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary"   onclick="doSave()">Save</button>
+    </div>`;
+  el('overlay').classList.add('open');
+  _onSave = onSave;
+  setTimeout(()=>el('modal-body')?.querySelector('input,select')?.focus(), 80);
+}
+
+function closeModal() { el('overlay').classList.remove('open'); _onSave = null; }
+function doSave() { if (_onSave) _onSave(); }
+function overlayClick(e) { if (e.target===el('overlay')) closeModal(); }
+
+// ════════════════════════════════════════════════════════
+// BOTTLE / CASE CALCULATOR HTML
+// ════════════════════════════════════════════════════════
+function calcHtml(cId, bId, tId, cVal='', bVal='') {
+  return `<div class="form-row">
+    <div class="form-group">
+      <label>Cases</label>
+      <input id="${cId}" type="number" min="0" value="${cVal}" placeholder="0"
+        oninput="recalc('${cId}','${bId}','${tId}')">
+    </div>
+    <div class="form-group">
+      <label>Bottles (extra)</label>
+      <input id="${bId}" type="number" min="0" max="11" value="${bVal}" placeholder="0"
+        oninput="recalc('${cId}','${bId}','${tId}')">
+    </div>
+  </div>
+  <div class="calc-box" id="${tId}">Enter cases and/or bottles</div>`;
+}
+
+function recalc(cId, bId, tId) {
+  const c = parseInt(el(cId)?.value)||0, b = parseInt(el(bId)?.value)||0;
+  const tot = c*12+b;
+  el(tId).textContent = `Total: ${tot} bottles · ${bottleStr(tot)}`;
+}
+
+function getBottles(cId, bId) {
+  return (parseInt(el(cId)?.value)||0)*12 + (parseInt(el(bId)?.value)||0);
+}
+
+// ════════════════════════════════════════════════════════
+// WINE & LOCATION SELECT HELPERS
+// ════════════════════════════════════════════════════════
+function wineOpts(selId, curId='') {
+  return `<select id="${selId}">
+    <option value="">— Select Wine —</option>
+    ${S.wines.map(w=>`<option value="${w.id}"${w.id===curId?' selected':''}>${w.name}</option>`).join('')}
+  </select>`;
+}
+function locOpts(selId, curId='') {
+  return `<select id="${selId}">
+    <option value="">— No Location —</option>
+    ${S.locations.map(l=>`<option value="${l.id}"${l.id===curId?' selected':''}>${l.name}</option>`).join('')}
+  </select>`;
+}
+
+// ════════════════════════════════════════════════════════
+// ADD / EDIT WINE
+// ════════════════════════════════════════════════════════
+function openAddWine() {
+  openModal('Add Wine', `
+    <div class="form-group"><label>Wine Name (e.g., 2023 Rosé)</label>
+    <input id="m-wn" type="text" placeholder="e.g., 2023 Rosé"></div>`,
+  () => {
+    const n = el('m-wn').value.trim();
+    if (!n) { toast('Name required'); return; }
+    S.wines.push({id:uid(), name:n});
+    save(); renderAll(); closeModal(); toast('Wine added');
+  });
+}
+
+function editWine(id) {
+  const w = S.wines.find(x=>x.id===id); if (!w) return;
+  openModal('Edit Wine', `
+    <div class="form-group"><label>Wine Name</label>
+    <input id="m-wn" type="text" value="${w.name}"></div>`,
+  () => {
+    const n = el('m-wn').value.trim();
+    if (!n) { toast('Name required'); return; }
+    w.name = n; save(); renderAll(); closeModal(); toast('Updated');
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// ADD / EDIT LOCATION
+// ════════════════════════════════════════════════════════
+function openAddLocation() {
+  openModal('Add Location', `
+    <div class="form-group"><label>Location Name (e.g., Barrel Room, Cave A)</label>
+    <input id="m-ln" type="text" placeholder="e.g., Barrel Room"></div>`,
+  () => {
+    const n = el('m-ln').value.trim();
+    if (!n) { toast('Name required'); return; }
+    S.locations.push({id:uid(), name:n});
+    save(); renderAll(); closeModal(); toast('Location added');
+  });
+}
+
+function editLoc(id) {
+  const l = S.locations.find(x=>x.id===id); if (!l) return;
+  openModal('Edit Location', `
+    <div class="form-group"><label>Location Name</label>
+    <input id="m-ln" type="text" value="${l.name}"></div>`,
+  () => {
+    const n = el('m-ln').value.trim();
+    if (!n) { toast('Name required'); return; }
+    l.name = n; save(); renderAll(); closeModal(); toast('Updated');
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// ADD / EDIT FINISHED GOODS
+// ════════════════════════════════════════════════════════
+function openAddFinished(goodId) {
+  const g = goodId ? S.finished.find(x=>x.id===goodId) : null;
+  const ibC = g ? Math.floor((g.inBond||0)/12) : '';
+  const ibB = g ? (g.inBond||0)%12 : '';
+  const obC = g ? Math.floor((g.outBond||0)/12) : '';
+  const obB = g ? (g.outBond||0)%12 : '';
+
+  openModal(g ? 'Edit Inventory Record' : 'Add Finished Goods', `
+    <div class="form-group"><label>Wine</label>${wineOpts('m-fg-w', g?.wineId)}</div>
+    <div class="form-group"><label>Location</label>${locOpts('m-fg-l', g?.locationId)}</div>
+    <div class="section-divider" style="margin-top:8px">In Bond</div>
+    ${calcHtml('m-fg-ic','m-fg-ib','m-fg-it', ibC, ibB)}
+    <div class="section-divider" style="margin-top:12px">Out of Bond</div>
+    ${calcHtml('m-fg-oc','m-fg-ob','m-fg-ot', obC, obB)}
+    <div class="form-group" style="margin-top:10px"><label>Notes</label>
+    <input id="m-fg-n" type="text" value="${g?.notes||''}" placeholder="Optional"></div>`,
+  () => {
+    const wineId = el('m-fg-w').value;
+    if (!wineId) { toast('Select a wine'); return; }
+    const inBond  = getBottles('m-fg-ic','m-fg-ib');
+    const outBond = getBottles('m-fg-oc','m-fg-ob');
+    const data = { wineId, locationId:el('m-fg-l').value, inBond, outBond, notes:el('m-fg-n').value };
+    if (g) { Object.assign(g, data); }
+    else   { S.finished.push({id:uid(),...data}); }
+    save(); renderAll(); closeModal(); toast(g?'Updated':'Inventory added');
+  });
+
+  if (g) {
+    setTimeout(()=>{
+      recalc('m-fg-ic','m-fg-ib','m-fg-it');
+      recalc('m-fg-oc','m-fg-ob','m-fg-ot');
+    }, 60);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// TRANSACTION MODAL
+// ════════════════════════════════════════════════════════
+function openTransaction(evt, goodId) {
+  const g = goodId ? S.finished.find(x=>x.id===goodId) : null;
+
+  openModal('Record Transaction', `
+    <div class="form-group"><label>Wine</label>${wineOpts('m-tx-w', g?.wineId)}</div>
+    <div class="form-group"><label>Date</label>
+      <input id="m-tx-d" type="date" value="${today()}"></div>
+    <div class="form-group"><label>Transaction Type</label>
+      <select id="m-tx-t" onchange="txTypeChange()">
+        <option value="add">Add to Inventory</option>
+        <option value="removeFromBond">Remove from Bond → Out of Bond</option>
+        <option value="sale">Sale</option>
+        <option value="sample">Marketing Sample</option>
+        <option value="library">Library</option>
+        <option value="adjustment">Inventory Adjustment</option>
+      </select>
+    </div>
+
+    <!-- where to add (add / adjustment) -->
+    <div id="m-dest-row" class="form-group">
+      <label>Add To</label>
+      <select id="m-tx-dest">
+        <option value="inBond">In Bond</option>
+        <option value="outOfBond">Out of Bond</option>
+      </select>
+    </div>
+
+    <!-- where to remove from (sale / sample / library) -->
+    <div id="m-src-row" class="form-group" style="display:none">
+      <label>Remove From</label>
+      <select id="m-tx-src">
+        <option value="outOfBond">Out of Bond</option>
+        <option value="inBond">In Bond</option>
+      </select>
+    </div>
+
+    <!-- sale channel -->
+    <div id="m-chan-row" style="display:none">
+      <div class="form-group"><label>Sold To</label>
+        <select id="m-tx-chan">
+          <option value="customer">Customer (Direct)</option>
+          <option value="store">Wine Store</option>
+          <option value="restaurant">Restaurant</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Recipient Name</label>
+        <input id="m-tx-rcpt" type="text" placeholder="Name of customer / store / restaurant"></div>
+    </div>
+
+    ${calcHtml('m-tx-c','m-tx-b','m-tx-tot')}
+
+    <div class="form-group"><label>Location</label>${locOpts('m-tx-l', g?.locationId)}</div>
+    <div class="form-group"><label>Notes</label>
+      <input id="m-tx-n" type="text" placeholder="Optional notes"></div>`,
+  () => {
+    const wineId = el('m-tx-w').value;
+    if (!wineId) { toast('Select a wine'); return; }
+    const bottles = getBottles('m-tx-c','m-tx-b');
+    if (!bottles) { toast('Enter a quantity'); return; }
+    const type     = el('m-tx-t').value;
+    const date     = el('m-tx-d').value;
+    const locId    = el('m-tx-l').value;
+    const notes    = el('m-tx-n').value;
+
+    const tx = {id:uid(), date, type, wineId, locationId:locId, bottles, notes};
+
+    if (type === 'add' || type === 'adjustment') {
+      const dest = el('m-tx-dest')?.value || 'inBond';
+      tx.bondSource = dest;
+      applyFG(wineId, locId, dest, +bottles);
+    } else if (type === 'removeFromBond') {
+      const actual = applyFG(wineId, locId, 'inBond', -bottles);
+      applyFG(wineId, locId, 'outOfBond', Math.abs(actual));
+      tx.bondSource = 'inBond';
+    } else if (type === 'sale') {
+      const src = el('m-tx-src')?.value || 'outOfBond';
+      tx.bondSource = src;
+      tx.channel   = el('m-tx-chan')?.value;
+      tx.recipient = el('m-tx-rcpt')?.value;
+      applyFG(wineId, locId, src, -bottles);
+    } else {
+      const src = el('m-tx-src')?.value || 'outOfBond';
+      tx.bondSource = src;
+      applyFG(wineId, locId, src, -bottles);
+    }
+
+    S.txns.push(tx);
+    save(); renderAll(); closeModal();
+    toast(`${TX_LABEL[type]}: ${bottleStr(bottles)}`);
+  });
+}
+
+function txTypeChange() {
+  const t = el('m-tx-t')?.value;
+  const isAdd = t==='add' || t==='adjustment';
+  const isSrc = ['sale','sample','library','removeFromBond'].includes(t);
+  el('m-dest-row').style.display = isAdd ? '' : 'none';
+  el('m-src-row').style.display  = isSrc ? '' : 'none';
+  el('m-chan-row').style.display  = t==='sale' ? '' : 'none';
+}
+
+function applyFG(wineId, locationId, bond, delta) {
+  let rec = S.finished.find(g=>g.wineId===wineId && g.locationId===locationId);
+  if (!rec) {
+    rec = {id:uid(), wineId, locationId, inBond:0, outBond:0};
+    S.finished.push(rec);
+  }
+  if (bond === 'inBond') {
+    const before = rec.inBond||0;
+    rec.inBond = Math.max(0, before + delta);
+    return rec.inBond - before;
+  } else {
+    const before = rec.outBond||0;
+    rec.outBond = Math.max(0, before + delta);
+    return rec.outBond - before;
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// ADD / EDIT UNFINISHED BOTTLE
+// ════════════════════════════════════════════════════════
+function openAddUnfinished(itemId) {
+  const item = itemId ? S.unfinBtl.find(x=>x.id===itemId) : null;
+  const c = item ? Math.floor((item.bottles||0)/12) : '';
+  const b = item ? (item.bottles||0)%12 : '';
+
+  openModal(item ? 'Edit Unfinished Wine' : 'Add Unfinished Wine (in Bottle)', `
+    <div class="form-group"><label>Wine</label>${wineOpts('m-uf-w', item?.wineId)}</div>
+    <div class="form-group"><label>Location</label>${locOpts('m-uf-l', item?.locationId)}</div>
+    ${calcHtml('m-uf-c','m-uf-b','m-uf-t', c, b)}
+    <div class="form-group" style="margin-top:10px"><label>Notes</label>
+    <input id="m-uf-n" type="text" value="${item?.notes||''}" placeholder="Optional"></div>`,
+  () => {
+    const wineId = el('m-uf-w').value;
+    if (!wineId) { toast('Select a wine'); return; }
+    const bottles = getBottles('m-uf-c','m-uf-b');
+    const data = {wineId, locationId:el('m-uf-l').value, bottles, notes:el('m-uf-n').value};
+    if (item) { Object.assign(item, data); }
+    else      { S.unfinBtl.push({id:uid(),...data}); }
+    save(); renderAll(); closeModal(); toast(item?'Updated':'Added');
+  });
+
+  if (item) setTimeout(()=>recalc('m-uf-c','m-uf-b','m-uf-t'), 60);
+}
+
+// ════════════════════════════════════════════════════════
+// ADD / EDIT FERMENTING BATCH
+// ════════════════════════════════════════════════════════
+function openAddFermenting(batchId) {
+  const b = batchId ? S.fermenting.find(x=>x.id===batchId) : null;
+
+  openModal(b ? 'Edit Fermenting Batch' : 'Add Fermenting Batch', `
+    <div class="form-group"><label>Wine</label>${wineOpts('m-fe-w', b?.wineId)}</div>
+    <div class="form-group"><label>Location</label>${locOpts('m-fe-l', b?.locationId)}</div>
+    <div class="form-row">
+      <div class="form-group"><label>Vessel Type</label>
+        <select id="m-fe-vt" onchange="feCalc()">
+          <option value="barrel"${b?.vesselType==='barrel'?' selected':''}>Barrel (60 gal)</option>
+          <option value="drum"${b?.vesselType==='drum'?' selected':''}>Drum (55 gal)</option>
+          <option value="tank"${b?.vesselType==='tank'?' selected':''}>Tank (custom size)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Vessel Count</label>
+        <input id="m-fe-vc" type="number" min="1" value="${b?.vesselCount||1}" oninput="feCalc()">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Fill Status</label>
+        <select id="m-fe-fs" onchange="feCalc()">
+          <option value="full"${b?.isFull!==false?' selected':''}>Full</option>
+          <option value="partial"${b?.isFull===false?' selected':''}>Partial</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Gallons (total)</label>
+        <input id="m-fe-g" type="number" min="0" step="0.5" value="${b?.gallons||''}" placeholder="e.g., 120">
+      </div>
+    </div>
+    <div class="calc-box" id="m-fe-hint">Select vessel to auto-suggest gallons</div>
+    <div class="form-group" style="margin-top:10px"><label>Notes</label>
+    <input id="m-fe-n" type="text" value="${b?.notes||''}" placeholder="Optional"></div>`,
+  () => {
+    const wineId = el('m-fe-w').value;
+    if (!wineId) { toast('Select a wine'); return; }
+    const gallons = parseFloat(el('m-fe-g').value);
+    if (!gallons||gallons<=0) { toast('Enter gallons'); return; }
+    const data = {
+      wineId, locationId: el('m-fe-l').value,
+      vesselType:  el('m-fe-vt').value,
+      vesselCount: parseInt(el('m-fe-vc').value)||1,
+      isFull:      el('m-fe-fs').value === 'full',
+      gallons, notes: el('m-fe-n').value
+    };
+    if (b) { Object.assign(b, data); }
+    else   { S.fermenting.push({id:uid(),...data}); }
+    save(); renderAll(); closeModal(); toast(b?'Updated':'Batch added');
+  });
+
+  setTimeout(feCalc, 60);
+}
+
+function feCalc() {
+  const vt = el('m-fe-vt')?.value;
+  const vc = parseInt(el('m-fe-vc')?.value)||1;
+  const full = el('m-fe-fs')?.value === 'full';
+  const hint = el('m-fe-hint');
+  const gEl  = el('m-fe-g');
+  if (!hint) return;
+  const gpv = vt==='barrel' ? 60 : vt==='drum' ? 55 : null;
+  if (gpv && full) {
+    const total = gpv * vc;
+    hint.textContent = `${vc} × ${gpv} gal = ${total} gal total (full)`;
+    if (!gEl.dataset.manual) gEl.value = total;
+  } else if (gpv) {
+    hint.textContent = `Max capacity: ${gpv*vc} gal — enter actual partial gallons above`;
+  } else {
+    hint.textContent = 'Enter total gallons for the tank(s) above';
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// ADD / EDIT SUPPLY
+// ════════════════════════════════════════════════════════
+function openAddSupply(supId) {
+  const s = supId ? S.supplies.find(x=>x.id===supId) : null;
+  const isGlass = !s || s.type==='glass';
+  const c = s?.type==='glass' ? Math.floor((s.bottles||0)/12) : '';
+  const b = s?.type==='glass' ? (s.bottles||0)%12 : '';
+
+  openModal(s?'Edit Supply':'Add Supply', `
+    <div class="form-group"><label>Supply Type</label>
+      <select id="m-su-t" onchange="supTypeChange()">
+        <option value="glass"${(!s||s.type==='glass')?' selected':''}>Glass (Bottles)</option>
+        <option value="cork"${s?.type==='cork'?' selected':''}>Corks</option>
+        <option value="closure"${s?.type==='closure'?' selected':''}>Closures</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Name / Description</label>
+      <input id="m-su-n" type="text" value="${s?.name||''}" placeholder="e.g., 750ml Bordeaux bottles"></div>
+    <div class="form-group"><label>Location</label>${locOpts('m-su-l', s?.locationId)}</div>
+    <div id="m-su-glass">
+      ${calcHtml('m-su-c','m-su-b','m-su-tot', c, b)}
+    </div>
+    <div id="m-su-units" style="display:none">
+      <div class="form-group"><label>Quantity</label>
+        <input id="m-su-u" type="number" min="0" value="${s?.units||0}"></div>
+    </div>
+    <div class="form-group"><label>Notes</label>
+      <input id="m-su-nn" type="text" value="${s?.notes||''}" placeholder="Optional"></div>`,
+  () => {
+    const type = el('m-su-t').value;
+    const name = el('m-su-n').value.trim();
+    const locId = el('m-su-l').value;
+    const notes = el('m-su-nn').value;
+    let data;
+    if (type === 'glass') {
+      data = {type, name, locationId:locId, bottles:getBottles('m-su-c','m-su-b'), notes};
+    } else {
+      data = {type, name, locationId:locId, units:parseInt(el('m-su-u')?.value)||0, notes};
+    }
+    if (s) { Object.assign(s, data); }
+    else   { S.supplies.push({id:uid(),...data}); }
+    save(); renderAll(); closeModal(); toast(s?'Updated':'Supply added');
+  });
+
+  setTimeout(()=>{
+    supTypeChange();
+    if (s?.type==='glass') recalc('m-su-c','m-su-b','m-su-tot');
+  }, 60);
+}
+
+function supTypeChange() {
+  const t = el('m-su-t')?.value;
+  el('m-su-glass').style.display = t==='glass' ? '' : 'none';
+  el('m-su-units').style.display = t!=='glass' ? '' : 'none';
+}
+
+// ════════════════════════════════════════════════════════
+// EXPORT — EXCEL
+// ════════════════════════════════════════════════════════
+function exportExcel() {
+  if (typeof XLSX === 'undefined') { toast('Excel library not loaded — check internet connection'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  const hdr = (arr) => [arr];
+
+  // Finished Goods
+  const fgRows = [['Wine','Location','In Bond Bottles','In Bond Cases','Out of Bond Bottles','Out of Bond Cases']];
+  S.finished.forEach(g=>{
+    const ib = g.inBond||0, ob = g.outBond||0;
+    fgRows.push([wName(g.wineId), lName(g.locationId), ib, Math.floor(ib/12), ob, Math.floor(ob/12)]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(fgRows), 'Finished Goods');
+
+  // Unfinished Bottles
+  const ufRows = [['Wine','Location','Bottles','Cases','Notes']];
+  S.unfinBtl.forEach(i=>{
+    const b = i.bottles||0;
+    ufRows.push([wName(i.wineId), lName(i.locationId), b, Math.floor(b/12), i.notes||'']);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ufRows), 'Unfinished Bottles');
+
+  // Fermenting
+  const feRows = [['Wine','Location','Vessel Type','Vessel Count','Full/Partial','Gallons','Notes']];
+  S.fermenting.forEach(b=>{
+    feRows.push([wName(b.wineId), lName(b.locationId), b.vesselType, b.vesselCount||1, b.isFull?'Full':'Partial', b.gallons||0, b.notes||'']);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(feRows), 'Fermenting');
+
+  // Supplies
+  const suRows = [['Type','Name','Location','Bottles','Cases','Units','Notes']];
+  S.supplies.forEach(s=>{
+    suRows.push([s.type, s.name||'', lName(s.locationId), s.bottles||'', s.bottles?Math.floor((s.bottles)/12):'', s.units||'', s.notes||'']);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(suRows), 'Supplies');
+
+  // Transactions
+  const txRows = [['Date','Wine','Type','Bottles','Cases','Gallons','Bond Source','Channel','Recipient','Location','Notes']];
+  S.txns.forEach(tx=>{
+    txRows.push([
+      tx.date, tx.wineId?wName(tx.wineId):(tx.itemName||''),
+      TX_LABEL[tx.type]||tx.type,
+      tx.bottles??'', tx.bottles!=null?Math.floor((tx.bottles||0)/12):'',
+      tx.gallons??'',
+      tx.bondSource||'', tx.channel?TX_CHAN[tx.channel]||tx.channel:'',
+      tx.recipient||'', lName(tx.locationId), tx.notes||''
+    ]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(txRows), 'Transactions');
+
+  // Wine List
+  const wlRows = [['Name']];
+  S.wines.forEach(w=>wlRows.push([w.name]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wlRows), 'Wine List');
+
+  // Locations
+  const llRows = [['Name']];
+  S.locations.forEach(l=>llRows.push([l.name]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(llRows), 'Locations');
+
+  XLSX.writeFile(wb, `wine_inventory_${today()}.xlsx`);
+  toast('Excel exported!');
+}
+
+// ════════════════════════════════════════════════════════
+// EXPORT / IMPORT JSON
+// ════════════════════════════════════════════════════════
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(S, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `wine_inventory_backup_${today()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Backup saved');
+}
+
+function triggerImport() {
+  if (!confirm('Import will REPLACE all current data. Have a backup first. Continue?')) return;
+  el('import-input').click();
+}
+
+function importJSON(evt) {
+  const file = evt.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imp = JSON.parse(e.target.result);
+      if (!imp.wines || !imp.txns) { toast('Unrecognized backup file'); return; }
+      S = imp; save(); renderAll(); toast('Data imported!');
+    } catch { toast('Failed to parse JSON'); }
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+}
+
+// ════════════════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════════════════
+let _toastTmr;
+function toast(msg) {
+  const t = el('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTmr);
+  _toastTmr = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+// ════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════
+load();
+renderAll();
+</script>
+</body>
+</html>
