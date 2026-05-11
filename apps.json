@@ -2,6 +2,30 @@
   "storeTitle": "My Apps",
   "apps": [
     {
+      "id": "enso",
+      "name": "Enso",
+      "description": "A quiet hybrid practice — running, lifting, and showing up. Pulls runs from Strava, asks for one tap on lift days, and writes weekly reflections with Claude.",
+      "icon": "/enso/icon-192.png",
+      "url": "/enso/",
+      "category": "Health",
+      "version": "0.1.0",
+      "releaseDate": "2026-05-11",
+      "color": "#5a7a52",
+      "changelog": [
+        {
+          "version": "0.1.0",
+          "date": "2026-05-11",
+          "notes": [
+            "Initial release",
+            "Curated hybrid plan (2/3/4 days/week, Foundation/Build/Maintain)",
+            "Today, Calendar, Insights, Settings — one tap to log a session",
+            "Strava OAuth + GPX file drop for automatic run tracking",
+            "Claude-written Sunday reflections and gentle adaptive suggestions (bring your own API key)"
+          ]
+        }
+      ]
+    },
+    {
       "id": "vault",
       "name": "PIN Vault",
       "description": "Secure PIN-protected storage for passwords, key combos, WiFi credentials, and notes. All data is encrypted with your PIN.",
