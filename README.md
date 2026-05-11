@@ -1,35 +1,23 @@
-# Business Jekyll Theme
+# rsandroni1.github.io
 
-Business Jekyll Theme is a theme that is designed to be used for small and medium business. It is designed by a team from [Technext](https://github.com/technext/). The theme is then ported over by [Melvin Ch'ng](http://melvinchng.github.io) for Jekyll support. The original source code can be obainted from Technext's [repository](https://github.com/technext/office)
+Personal app platform. A launcher (`/`) plus a set of installable PWAs hosted under their own paths.
 
-Unlike most Jekyll Themes, Business Jekyll Theme is not meant to be a single page theme. This theme is a package that you can use for your business website or promote certain project. I reorganized all the files and make it Jekyll friendly.
+## Apps
 
-Big thanks to the creator of Office as this theme would not be possible without their hard work! You are always welcome to contribute to this repository to make it better!
+- `/enso/` — Enso, hybrid practice tracker (running + strength)
+- `/vault/` — PIN Vault, AES-256-GCM encrypted notes
+- `/wine-inventory/` — Wine inventory app with Firebase sync
 
-**Example Site**
-- [Business Jekyll Theme](https://business-jekyll-theme.github.io)
+## Structure
 
-**Example Site From The Original Creator**
-- [Office Template](http://demo.themewagon.com/preview/office-responsive-multipage-bootstrap-template)
+- `index.html` + `store.js` + `store.css` + `store-manifest.json` + `store-sw.js` — the launcher
+- `apps.json` — registry of apps shown by the launcher
+- `.nojekyll` — disables Jekyll; the site is plain static HTML/CSS/JS
 
-## Feature
-- Responsive layout
-- CSS Framework - Bootstrap 3
-- Beautiful icons by Fontawesome
-- Clean, simple and elegant
-- Multi page Template
-- Well commented and structured coding
-- Easy to use
-- It's Free!
+## Adding an app
 
-## Note
-I removed certain features from the original theme packages as we do not really need it. I modified the original source code slightly to make it more mobile friendly and reusable. 
+1. Create a new directory at the repo root (e.g. `/myapp/`).
+2. Drop in `index.html`, `manifest.json`, `sw.js`, `icon-192.png`, `icon-512.png` plus any app code.
+3. Append an entry to `apps.json` matching the existing schema.
 
-## Installation
-1. For first time user, you have to install Ruby and Rails. If you do not have Ruby on Rails installed, you may follow [this tutorial](http://melvinchng.github.io/rails/RubyOnRailsInstallation.html) that I wrote for Windows, Linux, and MacOS (installation videos are included).
-2. Install Jekyll by using the command `gem install jekyll`.
-3. Start your localhost server by using the command `jekyll serve`. Make sure that you are at the root directory of your folder before using this command.
-4. Your site should be accessible at `localhost:4000`.
-5. For additional information about Jekyll, refer to the [official website](http://jekyllrb.com/). 
-
-## Enjoy!
+That's it — push to `master` and GitHub Pages serves it.
