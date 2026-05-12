@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Enso</title>
+  <meta name="description" content="A quiet hybrid practice — running, lifting, and showing up.">
+  <meta name="theme-color" content="#f4ede2">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Enso">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" href="icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+
+    <!-- First-run setup -->
+    <section id="screen-setup" class="screen setup-screen">
+      <h1>Enso</h1>
+      <p class="lead">A quiet hybrid practice — running, lifting, showing up. One thing at a time.</p>
+
+      <div class="step">
+        <h3>How many days a week?</h3>
+        <p class="muted" style="font-size: 13px; margin-top: 4px;">You can change this later. Start gentle.</p>
+        <div class="days-choice" id="setup-days">
+          <button data-n="2"><span class="n">2</span><span class="label">Foundation</span></button>
+          <button data-n="3" class="selected"><span class="n">3</span><span class="label">Balanced</span></button>
+          <button data-n="4"><span class="n">4</span><span class="label">Committed</span></button>
+        </div>
+      </div>
+
+      <div class="step">
+        <h3>What's your starting point?</h3>
+        <p class="muted" style="font-size: 13px; margin-top: 4px;">Pick what honestly fits this season.</p>
+        <select id="setup-phase" style="width: 100%; background: var(--paper-soft); border: 1px solid var(--rule); border-radius: 10px; padding: 11px 13px; font-size: 14px; margin-top: 10px;">
+          <option value="foundation">Foundation — rebuilding the habit, no soreness</option>
+          <option value="build" selected>Build — comfortable with both, growing capacity</option>
+          <option value="maintain">Maintain — staying sharp at current level</option>
+        </select>
+      </div>
+
+      <button class="btn" id="setup-start" style="width: 100%; margin-top: 12px;">Begin practice</button>
+    </section>
+
+    <!-- Today -->
+    <section id="screen-today" class="screen">
+      <div class="today-greeting">
+        <div class="eyebrow" id="today-date">Today</div>
+        <h2 id="today-day">A day to show up</h2>
+      </div>
+
+      <div class="enso-stage" id="today-enso"></div>
+
+      <div class="today-prescription">
+        <div id="today-prescription">Loading today's practice…</div>
+        <span class="small" id="today-prescription-detail"></span>
+      </div>
+
+      <button class="show-up-btn" id="btn-show-up">I showed up</button>
+
+      <div class="mood-row" id="mood-row">
+        <button class="mood-btn" data-mood="light">light</button>
+        <button class="mood-btn" data-mood="steady">steady</button>
+        <button class="mood-btn" data-mood="heavy">heavy</button>
+      </div>
+
+      <div class="note-row" id="note-row">
+        <input type="text" id="note-input" placeholder="One word, or one line. Optional." maxlength="140">
+      </div>
+
+      <div class="why-card">
+        <div class="eyebrow">Why this matters</div>
+        <p id="today-why">—</p>
+      </div>
+
+      <!-- Strava nudge if not connected -->
+      <div class="why-card" id="strava-nudge" style="display:none;">
+        <div class="eyebrow">A small offer</div>
+        <p>Your Garmin runs can flow in automatically through Strava. <a href="#" id="open-strava-settings">Set it up in Settings</a>.</p>
+      </div>
+
+      <!-- Claude suggestion card (shown after marking done if claude is configured) -->
+      <div id="claude-card" class="reflection hidden" style="margin-top: 26px;">
+        <div class="reflection-meta">Claude's read</div>
+        <p id="claude-text">…</p>
+        <div class="modal-actions">
+          <button class="btn small" id="claude-accept">Accept</button>
+          <button class="btn small ghost" id="claude-dismiss">Keep as is</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Calendar -->
+    <section id="screen-calendar" class="screen">
+      <h2>Calendar</h2>
+      <p class="muted" style="font-size: 13px; margin-bottom: 20px;">Each circle a day. Filled when you showed up.</p>
+      <div id="calendar-root"></div>
+
+      <div style="border-top: 1px solid var(--rule); padding-top: 22px; margin-top: 24px;">
+        <div class="eyebrow">Add a missed run</div>
+        <p class="muted" style="font-size: 13px;">Drop a Garmin / Strava export (.gpx).</p>
+        <input type="file" id="file-drop" accept=".gpx,.fit,.tcx" style="margin-top: 10px;">
+        <div class="status-line" id="file-drop-status"></div>
+      </div>
+    </section>
+
+    <!-- Insights -->
+    <section id="screen-insights" class="screen">
+      <h2>Insights</h2>
+
+      <div class="insights-stats">
+        <div class="stat"><div class="num" id="stat-month">0</div><div class="label">This month</div></div>
+        <div class="stat"><div class="num" id="stat-week">0m</div><div class="label">This week</div></div>
+        <div class="stat"><div class="num" id="stat-streak">0</div><div class="label">Days steady</div></div>
+      </div>
+
+      <div class="eyebrow">Sunday reflection</div>
+      <div class="reflection" id="reflection-card">
+        <div class="reflection-meta" id="reflection-meta">Not yet written</div>
+        <p id="reflection-text">A reflection appears here once you've practiced a few times this week and ask Claude for a read.</p>
+      </div>
+      <div class="btn-row" style="margin-bottom: 24px;">
+        <button class="btn small" id="btn-reflect">Reflect on this week</button>
+      </div>
+
+      <div class="benefit-section">
+        <h3>Why each practice matters</h3>
+        <ul class="benefit-list" id="benefit-list"></ul>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="screen-settings" class="screen">
+      <h2>Settings</h2>
+      <p class="muted" style="font-size: 13px; margin-bottom: 8px;">Everything stays on this device.</p>
+
+      <div class="setting-group">
+        <h3>Practice rhythm</h3>
+        <label>Days per week</label>
+        <select id="set-days">
+          <option value="2">2 — foundation</option>
+          <option value="3">3 — balanced</option>
+          <option value="4">4 — committed</option>
+        </select>
+        <label>Phase</label>
+        <select id="set-phase">
+          <option value="foundation">Foundation</option>
+          <option value="build">Build</option>
+          <option value="maintain">Maintain</option>
+        </select>
+        <label>Race date (optional)</label>
+        <input type="date" id="set-race">
+        <div class="btn-row">
+          <button class="btn small" id="btn-save-profile">Save</button>
+        </div>
+        <div class="status-line" id="profile-status"></div>
+      </div>
+
+      <div class="setting-group">
+        <h3>Strava</h3>
+        <p class="help">Your Garmin runs flow in automatically. Create your own Strava API app once at <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener">strava.com/settings/api</a>. Set the Authorization Callback Domain to <code id="strava-callback-domain">this site's domain</code>.</p>
+        <label>Client ID</label>
+        <input type="text" id="set-strava-client-id" autocomplete="off">
+        <label>Client Secret</label>
+        <input type="password" id="set-strava-client-secret" autocomplete="off">
+        <div class="btn-row">
+          <button class="btn small" id="btn-strava-connect">Connect Strava</button>
+          <button class="btn small ghost" id="btn-strava-sync">Sync now</button>
+          <button class="btn small danger" id="btn-strava-disconnect">Disconnect</button>
+        </div>
+        <div class="status-line" id="strava-status"></div>
+      </div>
+
+      <div class="setting-group">
+        <h3>Claude (AI reflection)</h3>
+        <p class="help">Bring your own Anthropic API key. Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Claude writes Sunday reflections and suggests gentle tweaks. Key stays in your browser.</p>
+        <label>Anthropic API key</label>
+        <input type="password" id="set-anthropic-key" autocomplete="off" placeholder="sk-ant-…">
+        <div class="btn-row">
+          <button class="btn small" id="btn-save-anthropic">Save</button>
+          <button class="btn small danger" id="btn-clear-anthropic">Remove</button>
+        </div>
+        <div class="status-line" id="anthropic-status"></div>
+      </div>
+
+      <div class="setting-group">
+        <h3>Your data</h3>
+        <p class="help">All practice data lives in this browser's localStorage. Export a backup any time.</p>
+        <div class="btn-row">
+          <button class="btn small ghost" id="btn-export">Export JSON</button>
+          <button class="btn small danger" id="btn-reset">Reset everything</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <p class="help center">Enso · v0.1 · <a href="/">back to apps</a></p>
+      </div>
+    </section>
+
+    <!-- Day detail modal -->
+    <div class="modal-backdrop" id="day-modal">
+      <div class="modal">
+        <div class="eyebrow" id="modal-date">—</div>
+        <h2 id="modal-title">—</h2>
+        <div class="modal-body">
+          <p id="modal-prescription" class="muted"></p>
+          <p id="modal-why" style="margin-top: 12px;"></p>
+          <p id="modal-actual" style="margin-top: 12px; font-family: var(--serif); font-size: 17px;"></p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn small" id="modal-mark-done">Mark as done</button>
+          <button class="btn small ghost" id="modal-mark-undone">Mark as missed</button>
+          <button class="btn small ghost" id="modal-close">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav hidden" id="bottom-nav">
+      <button class="nav-btn active" data-screen="today">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/></svg>
+        Today
+      </button>
+      <button class="nav-btn" data-screen="calendar">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.5" y="5.5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3.5v4M16 3.5v4"/></svg>
+        Calendar
+      </button>
+      <button class="nav-btn" data-screen="insights">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>
+        Insights
+      </button>
+      <button class="nav-btn" data-screen="settings">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+    </nav>
+
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
