@@ -26,6 +26,30 @@
       ]
     },
     {
+      "id": "wine-inventory",
+      "name": "Wine Inventory",
+      "description": "Cellar management app with real-time Firebase sync. Track wines by varietal, vintage, producer, and region. Import/export via Excel.",
+      "icon": "",
+      "url": "/wine-inventory/",
+      "category": "Food & Drink",
+      "version": "1.0",
+      "releaseDate": "2024-01-01",
+      "color": "#6e2031",
+      "changelog": [
+        {
+          "version": "1.0",
+          "date": "2024-01-01",
+          "notes": [
+            "Initial release",
+            "Firebase real-time sync across devices",
+            "Import / export via Excel (SheetJS)",
+            "Scrap and dump cellar actions",
+            "Filter by varietal, vintage, producer, and region"
+          ]
+        }
+      ]
+    },
+    {
       "id": "vault",
       "name": "PIN Vault",
       "description": "Secure PIN-protected storage for passwords, key combos, WiFi credentials, and notes. All data is encrypted with your PIN.",

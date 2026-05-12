@@ -86,7 +86,7 @@ function checkInstalled() {
 }
 
 function iconFor(category) {
-  const map = { 'Utilities': '🔧', 'Games': '🎮', 'Finance': '💰', 'Health': '❤️', 'Productivity': '✅' };
+  const map = { 'Utilities': '🔧', 'Games': '🎮', 'Finance': '💰', 'Health': '❤️', 'Productivity': '✅', 'Food & Drink': '🍷' };
   return map[category] || '📱';
 }
 
