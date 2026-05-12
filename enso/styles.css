@@ -504,3 +504,442 @@ h3 { font-size: 18px; line-height: 1.3; font-weight: 600; }
 
 /* hidden utility */
 .hidden { display: none !important; }
+
+/* ── Phase choice (setup) ── */
+.phase-choice {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.phase-choice button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: var(--paper-soft);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-align: left;
+  transition: border-color 120ms, background 120ms;
+}
+.phase-choice button.selected {
+  border-color: var(--ink);
+  background: #fff;
+}
+.phase-choice button .n {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 500;
+}
+.phase-choice button .label {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+/* ── Quote card ── */
+.quote-card {
+  position: relative;
+  margin: 22px 0 26px;
+  padding: 22px 24px 18px;
+  background: var(--paper-soft);
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+  text-align: center;
+}
+.quote-card blockquote {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.quote-card figcaption {
+  margin-top: 10px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.quote-shuffle {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--ink-soft);
+  font-size: 14px;
+  opacity: 0.6;
+  transition: opacity 120ms, transform 200ms;
+}
+.quote-shuffle:hover { opacity: 1; }
+.quote-shuffle:active { transform: rotate(180deg); }
+
+/* ── Weekly progress card ── */
+.week-card {
+  margin: 0 0 26px;
+  padding: 18px 20px;
+  background: var(--paper-soft);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+.week-progress {
+  margin: 12px 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.week-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 38px;
+  align-items: center;
+  gap: 12px;
+}
+.week-row-label {
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.week-row-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-faint);
+  background: transparent;
+  transition: background 120ms;
+}
+.dot.on {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.dot.extra {
+  width: auto;
+  height: auto;
+  border: none;
+  background: none;
+  font-size: 11px;
+  color: var(--ink-soft);
+  padding-left: 2px;
+}
+.week-row-count {
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.week-suggested {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-style: italic;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--rule);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+/* ── Log a session ── */
+.log-card {
+  margin: 0 0 26px;
+}
+.log-card .eyebrow { margin-bottom: 10px; }
+.log-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.log-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 14px 16px;
+  background: var(--paper-soft);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  transition: border-color 120ms, transform 120ms;
+}
+.log-tile:hover { border-color: var(--ink-soft); }
+.log-tile:active { transform: scale(0.97); }
+.log-tile-label {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.log-tile-sub {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+
+/* ── Stats ── */
+.stats-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+.stats-summary .stat {
+  background: var(--paper-soft);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 12px 8px;
+  text-align: center;
+}
+.stats-summary .stat .num {
+  font-family: var(--serif);
+  font-size: 22px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.stats-summary .stat .label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+.weekly-bars {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  height: 140px;
+  align-items: end;
+  margin-top: 12px;
+}
+.weekly-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  position: relative;
+}
+.weekly-bar-fill {
+  width: 100%;
+  background: var(--ink);
+  border-radius: 2px 2px 0 0;
+  min-height: 2px;
+  transition: height 250ms;
+}
+.weekly-bar-value {
+  font-size: 10px;
+  color: var(--ink-soft);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.weekly-bar-label {
+  font-size: 9px;
+  color: var(--ink-faint);
+  margin-top: 2px;
+  white-space: nowrap;
+  transform: rotate(-30deg) translateX(-4px);
+  transform-origin: top left;
+}
+.run-list {
+  list-style: none;
+  margin-top: 10px;
+}
+.run-row {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.run-row:last-child { border-bottom: none; }
+.run-date {
+  font-size: 12px;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+.run-type {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 500;
+}
+.run-numbers {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.run-elev {
+  margin-left: 8px;
+  color: var(--clay);
+}
+
+/* ── Suggestions (Train) ── */
+.suggestion-card {
+  margin: 10px 0;
+  padding: 14px 16px;
+  background: var(--paper-soft);
+  border-left: 3px solid var(--ink);
+  border-radius: 0 8px 8px 0;
+}
+.suggestion-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.suggestion-icon {
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--ink-soft);
+}
+.suggestion-head h4 {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 500;
+}
+.suggestion-detail {
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+.suggestion-action {
+  font-size: 13px;
+  color: var(--ink);
+  margin-top: 6px;
+  font-style: italic;
+}
+
+/* ── Claude export + strategies (Train) ── */
+.summary-text {
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  background: var(--paper-soft);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 120px;
+}
+#screen-train input,
+#screen-train textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--paper-soft);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+#screen-train textarea { resize: vertical; }
+.strategy-list, .journal-list { list-style: none; margin-top: 10px; }
+.strategy-row, .journal-row {
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  background: var(--paper-soft);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+.strategy-row-head, .journal-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.strategy-title {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 500;
+}
+.strategy-date, .journal-date {
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.journal-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--paper-deep);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+.strategy-body, .journal-thoughts {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: var(--sans);
+  background: none;
+}
+
+/* ── Journal form ── */
+#screen-journal textarea,
+#screen-journal select {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--paper-soft);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+#screen-journal textarea { resize: vertical; min-height: 80px; }
+.form-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.form-row select { flex: 1; margin-bottom: 0; }
+
+/* ── Link button (delete) ── */
+.link-btn {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.link-btn:hover { color: var(--ink); }
+.link-btn.danger:hover { color: var(--clay); }
+
+/* ── Log modal extras ── */
+#log-modal input[type="date"],
+#log-modal textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--paper-soft);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 10px;
+  margin-top: 4px;
+}
+#log-modal textarea { resize: vertical; min-height: 60px; }
+#log-modal label {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 2px;
+}

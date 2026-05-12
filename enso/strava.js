@@ -3,7 +3,7 @@
 // only sits on the user's own device — security-acceptable for a single-user PWA.
 
 import { storage, dt } from './storage.js';
-import { isRunSession } from './plan.js';
+import { classifyRun } from './plan.js';
 
 const AUTH_URL  = 'https://www.strava.com/oauth/authorize';
 const TOKEN_URL = 'https://www.strava.com/api/v3/oauth/token';
@@ -116,42 +116,26 @@ export async function sync(opts = {}) {
   for (const act of activities) {
     if (!RUN_TYPES.has(act.type)) continue;
     const startIso = act.start_date_local.slice(0, 10);
-    const plan = storage.getPlanFor(startIso);
     const existing = storage.getSession(startIso);
-    // skip if already marked done from a different source
+    // skip if already manually logged for this day from a non-Strava source
     if (existing?.completed && existing?.source !== 'strava') continue;
 
-    if (plan && isRunSession(plan.type)) {
-      storage.upsertSession(startIso, {
-        type: plan.type,
-        planned: plan.type,
-        completed: true,
-        completedAt: new Date().toISOString(),
-        source: 'strava',
-        stravaActivityId: act.id,
-        distance: Math.round(act.distance), // meters
-        durationSec: act.moving_time,
-        avgHr: act.average_heartrate || null,
-        elevGain: act.total_elevation_gain || null,
-        title: act.name
-      });
-      matched++;
-    } else {
-      // run on a day without a planned run — record it anyway as an "extra"
-      storage.upsertSession(startIso, {
-        type: 'easy_run',
-        planned: plan?.type || null,
-        completed: true,
-        completedAt: new Date().toISOString(),
-        source: 'strava',
-        stravaActivityId: act.id,
-        distance: Math.round(act.distance),
-        durationSec: act.moving_time,
-        avgHr: act.average_heartrate || null,
-        title: act.name,
-        extra: !plan || !isRunSession(plan.type)
-      });
-    }
+    const inferredType = classifyRun(act.distance, act.moving_time);
+    storage.upsertSession(startIso, {
+      type: inferredType,
+      completed: true,
+      completedAt: new Date().toISOString(),
+      source: 'strava',
+      stravaActivityId: act.id,
+      distance: Math.round(act.distance), // meters
+      durationSec: act.moving_time,
+      avgHr: act.average_heartrate || null,
+      maxHr: act.max_heartrate || null,
+      elevGain: act.total_elevation_gain || null,
+      avgCadence: act.average_cadence || null,
+      title: act.name
+    });
+    matched++;
   }
 
   storage.setLastSync({ ...lastSync, strava: Math.floor(Date.now() / 1000) });
