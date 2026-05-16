@@ -3,11 +3,13 @@
 const K = {
   profile: 'enso.profile',
   sessions: 'enso.sessions',
-  plan: 'enso.plan',
+  plan: 'enso.plan', // legacy — kept for back-compat reads but no longer written
   strava: 'enso.strava',
   anthropic: 'enso.anthropic',
   lastSync: 'enso.lastSync',
-  reflections: 'enso.reflections'
+  reflections: 'enso.reflections',
+  journal: 'enso.journal',
+  strategies: 'enso.strategies'
 };
 
 function read(key, fallback) {
@@ -97,7 +99,7 @@ export const storage = {
     write(K.lastSync, s);
   },
 
-  // reflections
+  // reflections (legacy — kept readable for users who had Claude on previously)
   getReflections() {
     return read(K.reflections, []);
   },
@@ -110,6 +112,49 @@ export const storage = {
     return this.getReflections()[0] || null;
   },
 
+  // journal — optional workout notes
+  getJournal() {
+    return read(K.journal, []);
+  },
+  addJournalEntry({ date, sessionType, thoughts }) {
+    if (!thoughts?.trim()) return null;
+    const list = this.getJournal();
+    const entry = {
+      id: (crypto.randomUUID && crypto.randomUUID()) || String(Date.now()),
+      date: date || new Date().toISOString().slice(0, 10),
+      sessionType: sessionType || null,
+      thoughts: thoughts.trim(),
+      createdAt: new Date().toISOString()
+    };
+    list.unshift(entry);
+    write(K.journal, list);
+    return entry;
+  },
+  deleteJournalEntry(id) {
+    write(K.journal, this.getJournal().filter(e => e.id !== id));
+  },
+
+  // strategies — pasted-in plans from Claude or self-written
+  getStrategies() {
+    return read(K.strategies, []);
+  },
+  addStrategy({ title, body }) {
+    if (!body?.trim()) return null;
+    const list = this.getStrategies();
+    const entry = {
+      id: (crypto.randomUUID && crypto.randomUUID()) || String(Date.now()),
+      title: title?.trim() || 'Untitled strategy',
+      body: body.trim(),
+      savedAt: new Date().toISOString()
+    };
+    list.unshift(entry);
+    write(K.strategies, list);
+    return entry;
+  },
+  deleteStrategy(id) {
+    write(K.strategies, this.getStrategies().filter(e => e.id !== id));
+  },
+
   // export / reset
   exportAll() {
     return {
@@ -117,6 +162,8 @@ export const storage = {
       sessions: this.getSessions(),
       plan: this.getPlan(),
       reflections: this.getReflections(),
+      journal: this.getJournal(),
+      strategies: this.getStrategies(),
       exportedAt: new Date().toISOString()
     };
   },

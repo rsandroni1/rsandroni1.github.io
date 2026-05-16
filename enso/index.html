@@ -23,26 +23,16 @@
     <!-- First-run setup -->
     <section id="screen-setup" class="screen setup-screen">
       <h1>Enso</h1>
-      <p class="lead">A quiet hybrid practice — running, lifting, showing up. One thing at a time.</p>
+      <p class="lead">A quiet hybrid practice — running, lifting, showing up. Train when you feel like it. The plan suggests; you decide.</p>
 
       <div class="step">
-        <h3>How many days a week?</h3>
-        <p class="muted" style="font-size: 13px; margin-top: 4px;">You can change this later. Start gentle.</p>
-        <div class="days-choice" id="setup-days">
-          <button data-n="2"><span class="n">2</span><span class="label">Foundation</span></button>
-          <button data-n="3" class="selected"><span class="n">3</span><span class="label">Balanced</span></button>
-          <button data-n="4"><span class="n">4</span><span class="label">Committed</span></button>
+        <h3>What’s your starting point?</h3>
+        <p class="muted" style="font-size: 13px; margin-top: 4px;">Pick what honestly fits this season. You can change it any time.</p>
+        <div class="phase-choice" id="setup-phase-choice">
+          <button data-phase="foundation"><span class="n">Foundation</span><span class="label">Rebuilding the habit</span></button>
+          <button data-phase="build" class="selected"><span class="n">Build</span><span class="label">Growing capacity</span></button>
+          <button data-phase="maintain"><span class="n">Maintain</span><span class="label">Staying sharp</span></button>
         </div>
-      </div>
-
-      <div class="step">
-        <h3>What's your starting point?</h3>
-        <p class="muted" style="font-size: 13px; margin-top: 4px;">Pick what honestly fits this season.</p>
-        <select id="setup-phase" style="width: 100%; background: var(--paper-soft); border: 1px solid var(--rule); border-radius: 10px; padding: 11px 13px; font-size: 14px; margin-top: 10px;">
-          <option value="foundation">Foundation — rebuilding the habit, no soreness</option>
-          <option value="build" selected>Build — comfortable with both, growing capacity</option>
-          <option value="maintain">Maintain — staying sharp at current level</option>
-        </select>
       </div>
 
       <button class="btn" id="setup-start" style="width: 100%; margin-top: 12px;">Begin practice</button>
@@ -57,24 +47,28 @@
 
       <div class="enso-stage" id="today-enso"></div>
 
-      <div class="today-prescription">
-        <div id="today-prescription">Loading today's practice…</div>
-        <span class="small" id="today-prescription-detail"></span>
+      <!-- Quote -->
+      <figure class="quote-card" id="quote-card">
+        <blockquote id="quote-text">—</blockquote>
+        <figcaption>— <span id="quote-author">—</span></figcaption>
+        <button class="quote-shuffle" id="quote-shuffle" aria-label="Another quote">↻</button>
+      </figure>
+
+      <!-- Weekly progress -->
+      <div class="week-card">
+        <div class="eyebrow">This week</div>
+        <div class="week-progress" id="week-progress"></div>
+        <p class="week-suggested" id="week-suggested">—</p>
       </div>
 
-      <button class="show-up-btn" id="btn-show-up">I showed up</button>
-
-      <div class="mood-row" id="mood-row">
-        <button class="mood-btn" data-mood="light">light</button>
-        <button class="mood-btn" data-mood="steady">steady</button>
-        <button class="mood-btn" data-mood="heavy">heavy</button>
+      <!-- Log a session -->
+      <div class="log-card">
+        <div class="eyebrow">Log a session</div>
+        <div class="log-grid" id="log-grid"></div>
       </div>
 
-      <div class="note-row" id="note-row">
-        <input type="text" id="note-input" placeholder="One word, or one line. Optional." maxlength="140">
-      </div>
-
-      <div class="why-card">
+      <!-- Why this matters (rotates with the suggested next session) -->
+      <div class="why-card" id="why-card">
         <div class="eyebrow">Why this matters</div>
         <p id="today-why">—</p>
       </div>
@@ -84,55 +78,77 @@
         <div class="eyebrow">A small offer</div>
         <p>Your Garmin runs can flow in automatically through Strava. <a href="#" id="open-strava-settings">Set it up in Settings</a>.</p>
       </div>
-
-      <!-- Claude suggestion card (shown after marking done if claude is configured) -->
-      <div id="claude-card" class="reflection hidden" style="margin-top: 26px;">
-        <div class="reflection-meta">Claude's read</div>
-        <p id="claude-text">…</p>
-        <div class="modal-actions">
-          <button class="btn small" id="claude-accept">Accept</button>
-          <button class="btn small ghost" id="claude-dismiss">Keep as is</button>
-        </div>
-      </div>
     </section>
 
-    <!-- Calendar -->
-    <section id="screen-calendar" class="screen">
-      <h2>Calendar</h2>
-      <p class="muted" style="font-size: 13px; margin-bottom: 20px;">Each circle a day. Filled when you showed up.</p>
-      <div id="calendar-root"></div>
+    <!-- Stats: running data -->
+    <section id="screen-stats" class="screen">
+      <h2>Stats</h2>
 
-      <div style="border-top: 1px solid var(--rule); padding-top: 22px; margin-top: 24px;">
-        <div class="eyebrow">Add a missed run</div>
-        <p class="muted" style="font-size: 13px;">Drop a Garmin / Strava export (.gpx).</p>
-        <input type="file" id="file-drop" accept=".gpx,.fit,.tcx" style="margin-top: 10px;">
-        <div class="status-line" id="file-drop-status"></div>
+      <div class="stats-summary">
+        <div class="stat"><div class="num" id="stat-week-miles">0</div><div class="label">mi this week</div></div>
+        <div class="stat"><div class="num" id="stat-month-miles">0</div><div class="label">mi this month</div></div>
+        <div class="stat"><div class="num" id="stat-longest">0</div><div class="label">longest (mi)</div></div>
+        <div class="stat"><div class="num" id="stat-avg-pace">—</div><div class="label">avg pace</div></div>
       </div>
+
+      <div class="eyebrow" style="margin-top: 26px;">Weekly miles</div>
+      <div class="weekly-bars" id="weekly-bars"></div>
+
+      <div class="eyebrow" style="margin-top: 26px;">Recent runs</div>
+      <ul class="run-list" id="run-list"></ul>
     </section>
 
-    <!-- Insights -->
-    <section id="screen-insights" class="screen">
-      <h2>Insights</h2>
+    <!-- Train: suggestions + Claude export + saved strategies -->
+    <section id="screen-train" class="screen">
+      <h2>Train</h2>
+      <p class="muted" style="font-size: 13px; margin-bottom: 18px;">What your data is whispering.</p>
 
-      <div class="insights-stats">
-        <div class="stat"><div class="num" id="stat-month">0</div><div class="label">This month</div></div>
-        <div class="stat"><div class="num" id="stat-week">0m</div><div class="label">This week</div></div>
-        <div class="stat"><div class="num" id="stat-streak">0</div><div class="label">Days steady</div></div>
-      </div>
+      <div class="eyebrow">Suggestions</div>
+      <div id="suggestions-root"></div>
 
-      <div class="eyebrow">Sunday reflection</div>
-      <div class="reflection" id="reflection-card">
-        <div class="reflection-meta" id="reflection-meta">Not yet written</div>
-        <p id="reflection-text">A reflection appears here once you've practiced a few times this week and ask Claude for a read.</p>
+      <div class="eyebrow" style="margin-top: 30px;">Discuss with Claude</div>
+      <p class="help">Generate a training summary, paste it into the Claude app, and save the recommendation here so you remember it.</p>
+      <div class="btn-row">
+        <button class="btn small" id="btn-gen-summary">Generate summary</button>
+        <button class="btn small ghost" id="btn-copy-summary" disabled>Copy</button>
       </div>
-      <div class="btn-row" style="margin-bottom: 24px;">
-        <button class="btn small" id="btn-reflect">Reflect on this week</button>
-      </div>
+      <textarea id="summary-text" class="summary-text" rows="10" placeholder="Tap “Generate summary” to build a copy-paste block." readonly></textarea>
 
-      <div class="benefit-section">
-        <h3>Why each practice matters</h3>
-        <ul class="benefit-list" id="benefit-list"></ul>
+      <div class="eyebrow" style="margin-top: 26px;">Save Claude’s recommendation</div>
+      <input type="text" id="strategy-title" placeholder="Title (e.g. “May plan from Claude”)">
+      <textarea id="strategy-body" rows="6" placeholder="Paste the strategy here."></textarea>
+      <div class="btn-row">
+        <button class="btn small" id="btn-save-strategy">Save strategy</button>
       </div>
+      <div class="status-line" id="strategy-status"></div>
+
+      <div class="eyebrow" style="margin-top: 30px;">Saved strategies</div>
+      <ul class="strategy-list" id="strategy-list"></ul>
+    </section>
+
+    <!-- Journal -->
+    <section id="screen-journal" class="screen">
+      <h2>Journal</h2>
+      <p class="muted" style="font-size: 13px; margin-bottom: 18px;">What were you thinking about while moving? Optional, kept for you.</p>
+
+      <textarea id="journal-input" rows="5" placeholder="One thought, one problem you’re turning over, one thing you noticed."></textarea>
+      <div class="form-row">
+        <select id="journal-session-type">
+          <option value="">— session type (optional) —</option>
+          <option value="easy_run">Easy run</option>
+          <option value="long_run">Long run</option>
+          <option value="intervals">Intervals</option>
+          <option value="lift_full">Full-body lift</option>
+          <option value="lift_upper">Upper-body lift</option>
+          <option value="lift_lower">Lower-body lift</option>
+          <option value="mobility">Mobility / stretch</option>
+        </select>
+        <button class="btn small" id="btn-save-journal">Save entry</button>
+      </div>
+      <div class="status-line" id="journal-status"></div>
+
+      <div class="eyebrow" style="margin-top: 26px;">Entries</div>
+      <ul class="journal-list" id="journal-list"></ul>
     </section>
 
     <!-- Settings -->
@@ -141,18 +157,11 @@
       <p class="muted" style="font-size: 13px; margin-bottom: 8px;">Everything stays on this device.</p>
 
       <div class="setting-group">
-        <h3>Practice rhythm</h3>
-        <label>Days per week</label>
-        <select id="set-days">
-          <option value="2">2 — foundation</option>
-          <option value="3">3 — balanced</option>
-          <option value="4">4 — committed</option>
-        </select>
-        <label>Phase</label>
+        <h3>Practice phase</h3>
         <select id="set-phase">
-          <option value="foundation">Foundation</option>
-          <option value="build">Build</option>
-          <option value="maintain">Maintain</option>
+          <option value="foundation">Foundation — rebuilding the habit</option>
+          <option value="build">Build — growing capacity</option>
+          <option value="maintain">Maintain — staying sharp</option>
         </select>
         <label>Race date (optional)</label>
         <input type="date" id="set-race">
@@ -164,7 +173,7 @@
 
       <div class="setting-group">
         <h3>Strava</h3>
-        <p class="help">Your Garmin runs flow in automatically. Create your own Strava API app once at <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener">strava.com/settings/api</a>. Set the Authorization Callback Domain to <code id="strava-callback-domain">this site's domain</code>.</p>
+        <p class="help">Your Garmin runs flow in automatically. Create your own Strava API app once at <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener">strava.com/settings/api</a>. Set the Authorization Callback Domain to <code id="strava-callback-domain">this site’s domain</code>.</p>
         <label>Client ID</label>
         <input type="text" id="set-strava-client-id" autocomplete="off">
         <label>Client Secret</label>
@@ -178,20 +187,8 @@
       </div>
 
       <div class="setting-group">
-        <h3>Claude (AI reflection)</h3>
-        <p class="help">Bring your own Anthropic API key. Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Claude writes Sunday reflections and suggests gentle tweaks. Key stays in your browser.</p>
-        <label>Anthropic API key</label>
-        <input type="password" id="set-anthropic-key" autocomplete="off" placeholder="sk-ant-…">
-        <div class="btn-row">
-          <button class="btn small" id="btn-save-anthropic">Save</button>
-          <button class="btn small danger" id="btn-clear-anthropic">Remove</button>
-        </div>
-        <div class="status-line" id="anthropic-status"></div>
-      </div>
-
-      <div class="setting-group">
         <h3>Your data</h3>
-        <p class="help">All practice data lives in this browser's localStorage. Export a backup any time.</p>
+        <p class="help">All data lives in this browser’s localStorage. Export a backup any time.</p>
         <div class="btn-row">
           <button class="btn small ghost" id="btn-export">Export JSON</button>
           <button class="btn small danger" id="btn-reset">Reset everything</button>
@@ -199,24 +196,25 @@
       </div>
 
       <div class="setting-group">
-        <p class="help center">Enso · v0.1 · <a href="/">back to apps</a></p>
+        <p class="help center">Enso · v0.2 · <a href="/">back to apps</a></p>
       </div>
     </section>
 
-    <!-- Day detail modal -->
-    <div class="modal-backdrop" id="day-modal">
+    <!-- Log session modal -->
+    <div class="modal-backdrop" id="log-modal">
       <div class="modal">
-        <div class="eyebrow" id="modal-date">—</div>
-        <h2 id="modal-title">—</h2>
+        <div class="eyebrow" id="log-modal-eyebrow">Log session</div>
+        <h2 id="log-modal-title">—</h2>
         <div class="modal-body">
-          <p id="modal-prescription" class="muted"></p>
-          <p id="modal-why" style="margin-top: 12px;"></p>
-          <p id="modal-actual" style="margin-top: 12px; font-family: var(--serif); font-size: 17px;"></p>
+          <p class="muted" id="log-modal-why" style="margin-bottom: 14px;"></p>
+          <label>Date</label>
+          <input type="date" id="log-date">
+          <label>Thoughts (optional)</label>
+          <textarea id="log-thoughts" rows="3" placeholder="What were you working through?"></textarea>
         </div>
         <div class="modal-actions">
-          <button class="btn small" id="modal-mark-done">Mark as done</button>
-          <button class="btn small ghost" id="modal-mark-undone">Mark as missed</button>
-          <button class="btn small ghost" id="modal-close">Close</button>
+          <button class="btn small" id="log-save">Log it</button>
+          <button class="btn small ghost" id="log-cancel">Cancel</button>
         </div>
       </div>
     </div>
@@ -227,16 +225,20 @@
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/></svg>
         Today
       </button>
-      <button class="nav-btn" data-screen="calendar">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.5" y="5.5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3.5v4M16 3.5v4"/></svg>
-        Calendar
-      </button>
-      <button class="nav-btn" data-screen="insights">
+      <button class="nav-btn" data-screen="stats">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>
-        Insights
+        Stats
+      </button>
+      <button class="nav-btn" data-screen="train">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+        Train
+      </button>
+      <button class="nav-btn" data-screen="journal">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 5a2 2 0 0 1 2-2h11l3 3v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M8 8h7M8 12h7M8 16h5"/></svg>
+        Journal
       </button>
       <button class="nav-btn" data-screen="settings">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4.9a7 7 0 0 0-2-1.2l-.4-2.5h-4l-.4 2.5a7 7 0 0 0-2 1.2l-2.4-.9-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-.9a7 7 0 0 0 2 1.2l.4 2.5h4l.4-2.5a7 7 0 0 0 2-1.2l2.4.9 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>
         Settings
       </button>
     </nav>
